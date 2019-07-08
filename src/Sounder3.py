@@ -13,8 +13,8 @@ from mutagen.id3 import ID3
 from typing import ClassVar, Dict, List
 
 # dir
-# sounder_dir: str = os.getcwd()
-sounder_dir: str = os.path.dirname(sys.executable)
+sounder_dir: str = os.getcwd()
+# sounder_dir: str = os.path.dirname(sys.executable)
 user_path: str = os.path.expanduser("~")
 # end
 
@@ -589,11 +589,11 @@ def mode_change() -> None:
 
 def show(window, scene) -> bool:
     if scene == "main_settings_frame":
-        main_window.title("Sounder > settings")
+        main_window.title("Sounder3 > settings")
     elif scene == "main_error_frame":
-        main_window.title("Sounder Error")
+        main_window.title("Sounder3 Error")
     else:
-        main_window.title("Sounder")
+        main_window.title("Sounder3")
     try:
         window.tkraise()
         return True
