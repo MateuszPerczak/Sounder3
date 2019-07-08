@@ -21,10 +21,9 @@ user_path: str = os.path.expanduser("~")
 
 main_window: ClassVar = Tk()
 main_window.geometry("800x500")
-main_window.title("Sounder")
+main_window.title("Sounder3")
 main_window.iconbitmap(sounder_dir + "\\icon.ico")
 main_window.resizable(width=FALSE, height=FALSE)
-main_window.configure(background="#fff")
 # icons
 logo_1_img: ClassVar = PhotoImage(file=sounder_dir + "\\logo_1.png")
 error_img: ClassVar = PhotoImage(file=sounder_dir + "\\error_light.png")
@@ -36,7 +35,7 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.0"
+version: str = "3.0.1"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -61,32 +60,23 @@ toggle_off_img: ClassVar
 album_img: ClassVar
 logo_2_img: ClassVar
 
+
 # end
 # functions
 
 
 def dump(value: str, cfg: Dict) -> None:
-    global sounder_dir, err
-    err += 1
+    global sounder_dir
     try:
         os.chdir(sounder_dir)
         with open('errors.log', 'a') as data:
-            data.write("-----------------------{}----------------------- \n".format(time.ctime()))
-            data.write(":/" + value + "] Error: " + str(err) + "\n")
+            data.write(value + "\n")
             data.write("Settings dump: \n" + str(cfg) + '\n')
-            data.write("You can report a problem on " + "\"https://github.com/losek1/Sounder/issues\" \n")
-    except Exception as e:
-        try:
-            with open('errors.log', 'a') as data:
-                data.write("{}".format(time.ctime()))
-                data.write(":/ [" + str(e) + "] Error " + str(err) + "\n")
-                data.write("Settings dump: \n" + str(cfg) + '\n')
-        except:
-            pass
-    try:
-        os.chdir(config["path"])
+            data.write("You can report a problem on " + "\"https://github.com/losek1/Sounder3/issues\" \n")
     except:
         pass
+    if bool(config["path"]):
+        os.chdir(config["path"])
     error_reason.set(value)
     show(main_error_frame, "main_error_frame")
 
@@ -102,8 +92,9 @@ def load_settings() -> bool:
             dump(str(e), config)
             return False
     elif not os.path.isfile('cfg.json'):
-        config = {"path": user_path + "\\Music", "theme": "light", "version": version,
-                  "refresh_time": 2, "transition_duration": 2, "hq_stream": True, "last_song": "", "continue": False}
+        config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
+                  "gtr_buffer": False,
+                  "last_song": "", "continue": False, "path": user_path + "\\Music"}
         try:
             with open('cfg.json', 'w') as data:
                 json.dump(config, data)
@@ -114,7 +105,7 @@ def load_settings() -> bool:
 
 
 def save_settings() -> bool:
-    global config, version, sounder_dir
+    global config, sounder_dir
     os.chdir(sounder_dir)
     if os.path.isfile('cfg.json'):
         try:
@@ -128,7 +119,7 @@ def save_settings() -> bool:
 
 
 def load_music() -> bool:
-    global config, num_of_songs, songs, current_song
+    global config, num_of_songs, songs
     num_of_songs = -1
     songs = []
     try:
@@ -180,7 +171,7 @@ def refresh_dir() -> None:
         refresh_window()
 
 
-def verify_settings():
+def verify_settings() -> None:
     global config
     try:
         if not type(config["refresh_time"]) is float:
@@ -198,10 +189,10 @@ def verify_settings():
     except:
         config["version"] = version
     try:
-        if not type(config["transition_duration"]) is float:
-            config["transition_duration"] = 1.5
+        if not type(config["transition_duration"]) is int:
+            config["transition_duration"] = 1
     except:
-        config["transition_duration"] = 1.5
+        config["transition_duration"] = 1
     try:
         if not type(config["gtr_buffer"]) is bool:
             config["gtr_buffer"] = False
@@ -397,7 +388,7 @@ def apply_settings() -> bool:
     try:
         left_settings_refresh_scale.set(config["refresh_time"])
         left_settings_duration_scale.set(config["transition_duration"])
-        music_time.set("0:00")
+        music_time.set("--:--")
         music_title.set("----------------------")
     except Exception as e:
         dump(str(e), config)
@@ -447,7 +438,7 @@ def init_player() -> None:
 
 
 def music(button) -> None:
-    global config, num_of_songs, songs, current_song, play_button_state
+    global num_of_songs, songs, current_song, play_button_state
     try:
         if button == "forward" and bool(songs):
             if not current_song >= num_of_songs:
@@ -622,7 +613,7 @@ def change_dir_btn() -> None:
         refresh_dir()
 
 
-def list_box_selector(event) -> None:
+def list_box_selector(event=None) -> None:
     music("list")
 
 
@@ -687,7 +678,7 @@ main_error_frame.configure(background="#fff")
 error_img_label: ClassVar = ttk.Label(main_error_frame, image=error_img, background='#fff', foreground='#000',
                                       border='0')
 error_label = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000', border='0',
-                        font='Bahnschrift 13')
+                        font='Bahnschrift 13', wraplength=700)
 error_img_label.pack(pady=(170, 0))
 error_label.pack(pady=(20, 0))
 main_error_frame.place(x=0, y=0, width=800, height=500)
@@ -738,7 +729,7 @@ left_settings_duration_scale: ClassVar = ttk.Scale(left_settings_frame_second, f
                                                    command=set_duration)
 left_settings_duration_label.pack(side=LEFT, padx=(6, 0), pady=(8, 0))
 left_settings_duration_scale.pack(side=RIGHT, padx=(8, 0), pady=(8, 0))
-left_settings_frame_second.pack(anchor=W)
+left_settings_frame_second.pack(anchor=W, fill=X)
 # end
 # third setting
 left_settings_frame_third: ClassVar = Frame(left_settings_frame)
@@ -772,7 +763,8 @@ left_settings_continue_label.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_continue_button.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_frame_fifth.pack(anchor=W, fill=X)
 # end
-settings_version_label: ClassVar = ttk.Label(left_settings_frame, text="V" + version + " Sounder © by Mateusz Perczak", font='Bahnschrift 11', style="W.TLabel")
+settings_version_label: ClassVar = ttk.Label(left_settings_frame, text="V" + version + " Sounder © by Mateusz Perczak",
+                                             font='Bahnschrift 11', style="W.TLabel")
 settings_version_label.pack(anchor=SW, padx=(6, 0), pady=(265, 0))
 # main frame
 main_player_frame: ClassVar = Frame(main_window)
@@ -852,6 +844,7 @@ mode_player_mode_button: ClassVar = ttk.Button(right_player_frame, cursor="hand2
 mode_player_mode_button.pack()
 mode_player_frame.pack()
 # end
+
 show(main_init_frame, "main_init_frame")
 init_thread = threading.Thread(target=init_player, )
 init_thread.daemon = True
