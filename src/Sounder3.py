@@ -13,12 +13,10 @@ from mutagen.id3 import ID3
 from typing import ClassVar, Dict, List
 
 # dir
-sounder_dir: str = os.getcwd()
-# sounder_dir: str = os.path.dirname(sys.executable)
+# sounder_dir: str = os.getcwd()
+sounder_dir: str = os.path.dirname(sys.executable)
 user_path: str = os.path.expanduser("~")
 # end
-
-
 main_window: ClassVar = Tk()
 main_window.geometry("800x500")
 main_window.title("Sounder3")
@@ -35,7 +33,7 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.1"
+version: str = "3.0.2"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -148,11 +146,9 @@ def refresh_window() -> None:
     path.set(str(config["path"].rstrip('\n')))
     left_player_music_list.delete(0, END)
     if bool(songs):
-        songs.reverse()
         for element in songs:
             element: str = element.rstrip('.mp3')
-            left_player_music_list.insert(0, element)
-        songs.reverse()
+            left_player_music_list.insert(len(songs), element)
         left_player_music_list.select_set(current_song)
 
 
@@ -439,6 +435,8 @@ def init_player() -> None:
 
 def music(button) -> None:
     global num_of_songs, songs, current_song, play_button_state
+    print(current_song)
+    print(num_of_songs)
     try:
         if button == "forward" and bool(songs):
             if not current_song >= num_of_songs:
@@ -450,7 +448,7 @@ def music(button) -> None:
                 if not play_button_state:
                     play_button_state = True
                     buttons_player_play_button.configure(image=pause_img)
-            set_song_attrib()
+                set_song_attrib()
         elif button == "play" and bool(songs):
             if not play_button_state:
                 if not mixer.music.get_busy():
@@ -480,7 +478,7 @@ def music(button) -> None:
                 if not play_button_state:
                     play_button_state = True
                     buttons_player_play_button.configure(image=pause_img)
-            set_song_attrib()
+                set_song_attrib()
         elif button == "list" and bool(songs):
             if play_button_state:
                 if mixer.music.get_busy():
