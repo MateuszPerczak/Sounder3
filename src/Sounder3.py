@@ -13,8 +13,8 @@ from mutagen.id3 import ID3
 from typing import ClassVar, Dict, List
 
 # dir
-# sounder_dir: str = os.getcwd()
-sounder_dir: str = os.path.dirname(sys.executable)
+sounder_dir: str = os.getcwd()
+# sounder_dir: str = os.path.dirname(sys.executable)
 user_path: str = os.path.expanduser("~")
 # end
 main_window: ClassVar = Tk()
@@ -33,14 +33,13 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.2"
+version: str = "3.0.3"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
 songs_exists: bool = False
 play_button_state: bool = False
 mode: str = "r_n"
-err: int = 0
 default_album_img: ClassVar
 repeat_all_img: ClassVar
 repeat_one_img: ClassVar
@@ -62,6 +61,8 @@ logo_2_img: ClassVar
 # end
 # functions
 
+# errors
+
 
 def dump(value: str, cfg: Dict) -> None:
     global sounder_dir
@@ -77,6 +78,9 @@ def dump(value: str, cfg: Dict) -> None:
         os.chdir(config["path"])
     error_reason.set(value)
     show(main_error_frame, "main_error_frame")
+
+
+# end
 
 
 def load_settings() -> bool:
@@ -185,14 +189,14 @@ def verify_settings() -> None:
     except:
         config["version"] = version
     try:
-        if not type(config["transition_duration"]) is int:
+        if not type(config["transition_duration"]) is float:
             config["transition_duration"] = 1
     except:
         config["transition_duration"] = 1
     try:
         if not type(config["gtr_buffer"]) is bool:
             config["gtr_buffer"] = False
-    except:
+    except :
         config["gtr_buffer"] = False
     try:
         if not type(config["last_song"]) is str:
@@ -218,12 +222,12 @@ def apply_theme() -> bool:
                                  darkcolor='#fff',
                                  bordercolor='#fff', troughcolor='#fff')
             main_theme.configure("W.TLabel", background='#fff', foreground='#000', border='0')
-            main_theme.configure("TButton", background='#fff', relief="flat", font=('Bahnschrift', 11)
-                                 , foreground='#000')
+            main_theme.configure("TButton", background='#fff', relief="flat", font=('Bahnschrift', 11),
+                                 foreground='#000')
             main_theme.map("TButton", background=[('pressed', '!disabled', '#fff'), ('active', '#eee')])
             main_theme.map("TScale", background=[('pressed', '!disabled', '#111'), ('active', '#111')])
-            main_theme.configure("TScale", troughcolor='#eee', background='#000', relief="flat", gripcount=0
-                                 , darkcolor="#000", lightcolor="#000", bordercolor="#fff")
+            main_theme.configure("TScale", troughcolor='#eee', background='#000', relief="flat", gripcount=0,
+                                 darkcolor="#000", lightcolor="#000", bordercolor="#fff")
             main_theme.configure("W.TEntry", foreground='#000', bordercolor='#000', lightcolor='#000',
                                  fieldbackground='#fff',
                                  selectbackground='#000', selectforeground='#fff')
@@ -231,8 +235,8 @@ def apply_theme() -> bool:
                                  background="#fff", darkcolor="#fff", lightcolor="#fff",
                                  troughcolor="#fff", bordercolor="#fff", arrowcolor="#000")
             main_theme.map("Horizontal.TScrollbar", background=[('pressed', '!disabled', '#eee'), ('active', '#eee')])
-            left_player_music_list.configure(selectbackground="#000", foreground='#000', background='#fff'
-                                             , relief="flat")
+            left_player_music_list.configure(selectbackground="#000", foreground='#000', background='#fff',
+                                             relief="flat")
             buttons_player_frame.configure(background="#fff")
             right_player_frame.configure(background="#fff")
             left_player_frame.configure(background="#fff")
@@ -297,18 +301,18 @@ def apply_theme() -> bool:
                                  lightcolor='#1e88e5',
                                  darkcolor='#1e88e5', bordercolor='#000', troughcolor='#000')
             main_theme.configure("W.TLabel", foreground='#fff', background='#000', border='0')
-            main_theme.configure("TButton", relief="flat", background='#000', font=('Bahnschrift', 11)
-                                 , foreground='#fff')
+            main_theme.configure("TButton", relief="flat", background='#000',
+                                 font=('Bahnschrift', 11), foreground='#fff')
             main_theme.map("TButton", background=[('pressed', '!disabled', '#000'), ('active', '#111')])
             main_theme.map("TScale", background=[('pressed', '!disabled', '#0d77d4'), ('active', '#0d77d4')])
-            main_theme.configure("TScale", troughcolor='#111', background='#1e88e5', relief="flat", gripcount=0
-                                 , darkcolor="#1e88e5", lightcolor="#1e88e5", bordercolor="#000")
-            main_theme.configure("Horizontal.TScrollbar", gripcount=0, relief="flat", background="#000"
-                                 , darkcolor="#000", lightcolor="#000", troughcolor="#000", bordercolor="#000"
-                                 , arrowcolor="#1e88e5")
+            main_theme.configure("TScale", troughcolor='#111', background='#1e88e5', relief="flat",
+                                 gripcount=0, darkcolor="#1e88e5", lightcolor="#1e88e5", bordercolor="#000")
+            main_theme.configure("Horizontal.TScrollbar", gripcount=0, relief="flat", background="#000",
+                                 darkcolor="#000", lightcolor="#000", troughcolor="#000", bordercolor="#000",
+                                 arrowcolor="#1e88e5")
             main_theme.map("Horizontal.TScrollbar", background=[('pressed', '!disabled', '#111'), ('active', '#111')])
-            left_player_music_list.configure(selectbackground="#1e88e5", foreground='#fff', background='#000'
-                                             , relief="flat")
+            left_player_music_list.configure(selectbackground="#1e88e5", foreground='#fff', background='#000',
+                                             relief="flat")
             buttons_player_frame.configure(background="#000")
             right_player_frame.configure(background="#000")
             left_player_frame.configure(background="#000")
@@ -400,6 +404,7 @@ def init_mixer() -> bool:
         else:
             mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
         mixer.init()
+        mixer.music.set_volume(99)
     except Exception as e:
         dump(str(e), config)
         return False
@@ -435,8 +440,6 @@ def init_player() -> None:
 
 def music(button) -> None:
     global num_of_songs, songs, current_song, play_button_state
-    print(current_song)
-    print(num_of_songs)
     try:
         if button == "forward" and bool(songs):
             if not current_song >= num_of_songs:
@@ -491,7 +494,7 @@ def music(button) -> None:
             mixer.music.play()
             set_song_attrib()
     except:
-        refresh_window()
+        refresh_dir()
 
 
 def set_song_attrib() -> None:
@@ -601,8 +604,8 @@ def show(window, scene) -> bool:
 
 
 def close() -> None:
-    save_settings()
     main_player_frame.destroy()
+    save_settings()
     sys.exit()
 
 
@@ -622,7 +625,7 @@ def set_refresh(value) -> None:
 
 def set_duration(value) -> None:
     global config
-    config["transition_duration"] = round(float(value), 0)
+    config["transition_duration"] = round(float(value), 1)
 
 
 def toggle_theme() -> None:
@@ -677,8 +680,10 @@ error_img_label: ClassVar = ttk.Label(main_error_frame, image=error_img, backgro
                                       border='0')
 error_label = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000', border='0',
                         font='Bahnschrift 13', wraplength=700)
+error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="TRY AGAIN", command=init_player)
 error_img_label.pack(pady=(170, 0))
 error_label.pack(pady=(20, 0))
+error_button.pack(pady=(60, 0))
 main_error_frame.place(x=0, y=0, width=800, height=500)
 # end
 # settings frame
