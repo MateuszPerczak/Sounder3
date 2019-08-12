@@ -13,8 +13,8 @@ from mutagen.id3 import ID3
 from typing import ClassVar, Dict, List
 
 # dir
-sounder_dir: str = os.getcwd()
-# sounder_dir: str = os.path.dirname(sys.executable)
+# sounder_dir: str = os.getcwd()
+sounder_dir: str = os.path.dirname(sys.executable)
 user_path: str = os.path.expanduser("~")
 # end
 main_window: ClassVar = Tk()
@@ -33,7 +33,7 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.3"
+version: str = "3.0.4"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -60,7 +60,6 @@ logo_2_img: ClassVar
 
 # end
 # functions
-
 # errors
 
 
@@ -96,7 +95,7 @@ def load_settings() -> bool:
     elif not os.path.isfile('cfg.json'):
         config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
                   "gtr_buffer": False,
-                  "last_song": "", "continue": False, "path": user_path + "\\Music"}
+                  "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False}
         try:
             with open('cfg.json', 'w') as data:
                 json.dump(config, data)
@@ -127,7 +126,7 @@ def load_music() -> bool:
     try:
         os.chdir(config["path"])
         for file in os.listdir(config["path"]):
-            if file.endswith(".mp3"):
+            if file.endswith(".xm") or file.endswith(".mp3") or file.endswith(".wav"):
                 num_of_songs += 1
                 songs.append(file)
     except:
@@ -150,8 +149,12 @@ def refresh_window() -> None:
     path.set(str(config["path"].rstrip('\n')))
     left_player_music_list.delete(0, END)
     if bool(songs):
+        element: str
         for element in songs:
-            element: str = element.rstrip('.mp3')
+            if element[-4:] == '.mp3':
+                element = element.rstrip('.mp3')
+            elif element[-3:] == '.xm':
+                element = element.rstrip('.xm')
             left_player_music_list.insert(len(songs), element)
         left_player_music_list.select_set(current_song)
 
@@ -208,6 +211,11 @@ def verify_settings() -> None:
             config["continue"] = False
     except:
         config["continue"] = False
+    try:
+        if not type(config["fade"]) is bool:
+            config["fade"] = False
+    except:
+        config["fade"] = False
 
 
 def apply_theme() -> bool:
@@ -255,6 +263,7 @@ def apply_theme() -> bool:
             left_player_list_box_frame.configure(background="#fff")
             main_window.configure(background="#fff")
             left_settings_frame_fifth.configure(background="#fff")
+            left_settings_frame_sixth.configure(background="#fff")
             default_album_img = ImageTk.PhotoImage(Image.open(sounder_dir + "\\cover_art_light.png").resize((220, 220)))
             repeat_all_img = PhotoImage(file=sounder_dir + "\\repeat_all_light.png")
             repeat_one_img = PhotoImage(file=sounder_dir + "\\repeat_one_light.png")
@@ -296,6 +305,10 @@ def apply_theme() -> bool:
                 left_settings_continue_button.configure(image=toggle_on_img)
             else:
                 left_settings_continue_button.configure(image=toggle_off_img)
+            if config["fade"]:
+                left_settings_fade_button.configure(image=toggle_on_img)
+            else:
+                left_settings_fade_button.configure(image=toggle_off_img)
         elif config["theme"] == "dark":
             main_theme.configure("G.Horizontal.TProgressbar", foreground='#1e88e5', background='#1e88e5',
                                  lightcolor='#1e88e5',
@@ -331,6 +344,7 @@ def apply_theme() -> bool:
             left_player_list_box_frame.configure(background="#000")
             main_window.configure(background="#000")
             left_settings_frame_fifth.configure(background="#000")
+            left_settings_frame_sixth.configure(background="#000")
             default_album_img = ImageTk.PhotoImage(Image.open(sounder_dir + "\\cover_art_dark.png").resize((220, 220)))
             repeat_all_img = PhotoImage(file=sounder_dir + "\\repeat_all_dark.png")
             repeat_one_img = PhotoImage(file=sounder_dir + "\\repeat_one_dark.png")
@@ -368,11 +382,14 @@ def apply_theme() -> bool:
                 mode_player_mode_button.configure(image=repeat_all_img)
             elif mode == "r_o":
                 mode_player_mode_button.configure(image=repeat_one_img)
-
             if config["continue"]:
                 left_settings_continue_button.configure(image=toggle_on_img)
             else:
                 left_settings_continue_button.configure(image=toggle_off_img)
+            if config["fade"]:
+                left_settings_fade_button.configure(image=toggle_on_img)
+            else:
+                left_settings_fade_button.configure(image=toggle_off_img)
         else:
             dump("Failed to apply theme", config)
             config["theme"] = "light"
@@ -384,12 +401,14 @@ def apply_theme() -> bool:
 
 
 def apply_settings() -> bool:
-    global config
+    global config, main_window
     try:
         left_settings_refresh_scale.set(config["refresh_time"])
         left_settings_duration_scale.set(config["transition_duration"])
         music_time.set("--:--")
         music_title.set("----------------------")
+        main_window.bind("<FocusIn>", fade)
+        main_window.bind("<FocusOut>", fade)
     except Exception as e:
         dump(str(e), config)
         return False
@@ -426,10 +445,12 @@ def init_player() -> None:
             if apply_settings():
                 if apply_theme():
                     if init_mixer():
-                        if not load_music():
+                        if load_music():
+                            pass
+                        else:
                             while not change_dir():
                                 pass
-                        load_music()
+                            load_music()
                         start_music()
                         refresh_window()
                         set_song_attrib()
@@ -500,30 +521,47 @@ def music(button) -> None:
 def set_song_attrib() -> None:
     global songs, current_song, album_img, config
     if bool(songs):
-        try:
-            tags: ClassVar = ID3(songs[current_song])
+        if songs[current_song][-4:] == ".mp3":
             try:
-                album: str = tags["TALB"]
-                album_name.set(album)
-            except:
-                album_name.set("")
-            try:
-                pict: bytes = tags.get("APIC:").data
-                album_img = ImageTk.PhotoImage(Image.open(BytesIO(pict)).resize((220, 220)))
-                right_player_album_art_label.configure(image=album_img)
+                tags: ClassVar = ID3(songs[current_song])
+                try:
+                    album: str = tags["TALB"]
+                    album_name.set(album)
+                except:
+                    album_name.set("")
+                try:
+                    pict: bytes = tags.get("APIC:").data
+                    album_img = ImageTk.PhotoImage(Image.open(BytesIO(pict)).resize((220, 220)))
+                    right_player_album_art_label.configure(image=album_img)
+                except:
+                    right_player_album_art_label.configure(image=default_album_img)
+                try:
+                    music_title.set(str(tags["TIT2"]))
+                except:
+                    music_title.set(songs[current_song].rstrip(".mp3"))
             except:
                 right_player_album_art_label.configure(image=default_album_img)
-            try:
-                music_title.set(str(tags["TIT2"]))
-            except:
                 music_title.set(songs[current_song].rstrip(".mp3"))
-        except:
+            left_player_music_list.selection_clear(0, END)
+            left_player_music_list.select_set(current_song)
+            music_time.set("0:00")
+            config["last_song"] = songs[current_song]
+        elif songs[current_song][-3:] == ".xm":
+            album_name.set("")
             right_player_album_art_label.configure(image=default_album_img)
-            music_title.set(songs[current_song].rstrip(".mp3"))
-        left_player_music_list.selection_clear(0, END)
-        left_player_music_list.select_set(current_song)
-        music_time.set("0:00")
-        config["last_song"] = songs[current_song]
+            music_title.set(songs[current_song].rstrip(".xm"))
+            left_player_music_list.selection_clear(0, END)
+            left_player_music_list.select_set(current_song)
+            music_time.set("0:00")
+            config["last_song"] = songs[current_song]
+        elif songs[current_song][-4:] == ".wav":
+            album_name.set("")
+            right_player_album_art_label.configure(image=default_album_img)
+            music_title.set(songs[current_song].rstrip(".wav"))
+            left_player_music_list.selection_clear(0, END)
+            left_player_music_list.select_set(current_song)
+            music_time.set("0:00")
+            config["last_song"] = songs[current_song]
 
 
 def song_stats() -> None:
@@ -658,6 +696,25 @@ def toggle_continue() -> None:
         config["continue"] = True
 
 
+def toggle_fade() -> None:
+    global config
+    if config["fade"]:
+        left_settings_fade_button.configure(image=toggle_off_img)
+        config["fade"] = False
+    else:
+        left_settings_fade_button.configure(image=toggle_on_img)
+        config["fade"] = True
+
+
+def fade(event):
+    global main_window, config
+    if config["fade"]:
+        if str(event.type) == "FocusIn":
+            main_window.attributes('-alpha', 1)
+        elif str(event.type) == "FocusOut":
+            main_window.attributes('-alpha', 0.3)
+
+
 # end
 # main init frame
 main_init_frame: ClassVar = Frame(main_window, width=800, height=500)
@@ -680,7 +737,8 @@ error_img_label: ClassVar = ttk.Label(main_error_frame, image=error_img, backgro
                                       border='0')
 error_label = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000', border='0',
                         font='Bahnschrift 13', wraplength=700)
-error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="TRY AGAIN", command=init_player)
+error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="TRY AGAIN",
+                                    command=init_player)
 error_img_label.pack(pady=(170, 0))
 error_label.pack(pady=(20, 0))
 error_button.pack(pady=(60, 0))
@@ -765,10 +823,19 @@ left_settings_continue_button: ClassVar = ttk.Button(left_settings_frame_fifth, 
 left_settings_continue_label.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_continue_button.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_frame_fifth.pack(anchor=W, fill=X)
+# sixth setting
+left_settings_frame_sixth: ClassVar = Frame(left_settings_frame)
+left_settings_fade_label: ClassVar = ttk.Label(left_settings_frame_sixth, text="Fade Sounder while it is not in use",
+                                               font='Bahnschrift 11', style="W.TLabel")
+left_settings_fade_button: ClassVar = ttk.Button(left_settings_frame_sixth, cursor="hand2", takefocus=False,
+                                                 command=toggle_fade)
+left_settings_fade_label.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
+left_settings_fade_button.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
+left_settings_frame_sixth.pack(anchor=W, fill=X)
 # end
 settings_version_label: ClassVar = ttk.Label(left_settings_frame, text="V" + version + " Sounder © by Mateusz Perczak",
                                              font='Bahnschrift 11', style="W.TLabel")
-settings_version_label.pack(anchor=SW, padx=(6, 0), pady=(265, 0))
+settings_version_label.pack(anchor=SW, padx=(6, 0), pady=(230, 0))
 # main frame
 main_player_frame: ClassVar = Frame(main_window)
 main_player_frame.grid(row=0, column=0, sticky='news')
@@ -776,7 +843,7 @@ main_player_frame.grid(row=0, column=0, sticky='news')
 # top frame
 top_player_frame: ClassVar = Frame(main_player_frame)
 top_player_refresh_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
-                                                 command=refresh_dir)
+                                                 command=lambda: refresh_dir)
 top_player_folder_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
                                                 command=change_dir_btn)
 top_player_path_label: ClassVar = ttk.Label(top_player_frame, width=85, textvariable=path, font='Bahnschrift 11',
@@ -847,6 +914,7 @@ mode_player_mode_button: ClassVar = ttk.Button(right_player_frame, cursor="hand2
 mode_player_mode_button.pack()
 mode_player_frame.pack()
 # end
+
 
 show(main_init_frame, "main_init_frame")
 init_thread = threading.Thread(target=init_player, )
