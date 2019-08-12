@@ -3,6 +3,18 @@
 # Py_MusicPlayer
 Python mp3 music player.
 
+## General Features:
+| Goals | Status |
+| --- | --- |
+| adding mp3 file support | ☑ |
+| adding xm file support | ☑ |
+| adding wav file supports | ☑ |
+| adding ogg file support | ☐ | 
+| adding falc file support | ☐ | 
+| adding changelog to program Sounder | ☐ | 
+| adding updater to Sounder | ☐ | 
+
+
 ## Authors
 Main programmer, designer: Mateusz Perczak
 <br></br>
@@ -11,7 +23,7 @@ Logo designer: reallinfo
 ## Python version:
 3.6.8
 
-## Used Libraries
+## Used Libraries:
 
 + os
 + time
