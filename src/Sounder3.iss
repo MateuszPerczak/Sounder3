@@ -37,17 +37,17 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "C:\Users\Mateusz\Desktop\Sounder3\Sounder3.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_bz2.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\_cffi_backend.cp36-win_amd64.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\_cffi_backend.cp36-win_amd64.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_ctypes.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_decimal.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\_distutils_findvs.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\_distutils_findvs.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_hashlib.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_lzma.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\_multiprocessing.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\_multiprocessing.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_socket.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_ssl.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\_tkinter.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\_win32sysloader.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\_win32sysloader.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\back_dark.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\back_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\base_library.zip"; DestDir: "{app}"; Flags: ignoreversion
@@ -55,6 +55,7 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\cover_art_dark.png"; DestDir: "{app}"
 Source: "C:\Users\Mateusz\Desktop\Sounder3\cover_art_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\error_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\errors.log"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\Mateusz\Desktop\Sounder3\changelog.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\cfg.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\file_directory_dark.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\file_directory_light.png"; DestDir: "{app}"; Flags: ignoreversion
@@ -71,7 +72,7 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\libvorbis-0.dll"; DestDir: "{app}"; F
 Source: "C:\Users\Mateusz\Desktop\Sounder3\libvorbisfile-3.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\libwebp-5.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\logo_1.png"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\mfc140u.dll"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\mfc140u.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pause_dark.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pause_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\play_dark.png"; DestDir: "{app}"; Flags: ignoreversion
@@ -80,8 +81,8 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\previous_dark.png"; DestDir: "{app}";
 Source: "C:\Users\Mateusz\Desktop\Sounder3\previous_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pyexpat.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\python36.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\pythoncom36.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\pywintypes36.dll"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\pythoncom36.dll"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\pywintypes36.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\refresh_dark.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\refresh_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\repeat_all_dark.png"; DestDir: "{app}"; Flags: ignoreversion
@@ -106,15 +107,15 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\toggle_on_dark.png"; DestDir: "{app}"
 Source: "C:\Users\Mateusz\Desktop\Sounder3\toggle_on_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\unicodedata.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\VCRUNTIME140.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\win32api.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\win32trace.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\win32ui.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\win32wnet.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\win32api.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\win32trace.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\win32ui.pyd"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\win32wnet.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\zlib1.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; Folders
 Source: "C:\Users\Mateusz\Desktop\Sounder3\Include\*"; DestDir: "{app}\Include"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\*"; DestDir: "{app}\lib2to3\"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\tests\data\*"; DestDir: "{app}\lib2to3\tests\data\"; Flags: ignoreversion recursesubdirs createallsubdirs
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\*"; DestDir: "{app}\lib2to3\"; Flags: ignoreversion recursesubdirs createallsubdirs
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\tests\data\*"; DestDir: "{app}\lib2to3\tests\data\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\PIL\*"; DestDir: "{app}\PIL\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pygame\*"; DestDir: "{app}\pygame\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\tcl\*"; DestDir: "{app}\tcl\"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -148,7 +149,7 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\tk\*"; DestDir: "{app}\tk\"; Flags: i
 Source: "C:\Users\Mateusz\Desktop\Sounder3\tk\images\*"; DestDir: "{app}\tk\images\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\tk\msgs\*"; DestDir: "{app}\tk\msgs\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\tk\ttk\*"; DestDir: "{app}\tk\ttk\"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\Mateusz\Desktop\Sounder3\win32com\shell\*"; DestDir: "{app}\win32com\shell\"; Flags: ignoreversion recursesubdirs createallsubdirs
+;Source: "C:\Users\Mateusz\Desktop\Sounder3\win32com\shell\*"; DestDir: "{app}\win32com\shell\"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 

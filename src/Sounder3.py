@@ -33,7 +33,7 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.4"
+version: str = "3.0.5"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -83,7 +83,8 @@ def dump(value: str, cfg: Dict) -> None:
 
 
 def load_settings() -> bool:
-    global config, version
+    global config, version, sounder_dir
+    os.chdir(sounder_dir)
     if os.path.isfile('cfg.json'):
         try:
             with open('cfg.json', 'r') as data:
@@ -126,7 +127,7 @@ def load_music() -> bool:
     try:
         os.chdir(config["path"])
         for file in os.listdir(config["path"]):
-            if file.endswith(".xm") or file.endswith(".mp3") or file.endswith(".wav"):
+            if file.endswith(".xm") or file.endswith(".mp3") or file.endswith(".wav") or file.endswith(".ogg"):
                 num_of_songs += 1
                 songs.append(file)
     except:
@@ -151,11 +152,7 @@ def refresh_window() -> None:
     if bool(songs):
         element: str
         for element in songs:
-            if element[-4:] == '.mp3':
-                element = element.rstrip('.mp3')
-            elif element[-3:] == '.xm':
-                element = element.rstrip('.xm')
-            left_player_music_list.insert(len(songs), element)
+            left_player_music_list.insert(len(songs), os.path.splitext(element)[0])
         left_player_music_list.select_set(current_song)
 
 
@@ -419,7 +416,7 @@ def init_mixer() -> bool:
     global config
     try:
         if config["gtr_buffer"]:
-            mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=8192)
+            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=8192)
         else:
             mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
         mixer.init()
@@ -521,7 +518,7 @@ def music(button) -> None:
 def set_song_attrib() -> None:
     global songs, current_song, album_img, config
     if bool(songs):
-        if songs[current_song][-4:] == ".mp3":
+        if os.path.splitext(songs[current_song])[1] == ".mp3":
             try:
                 tags: ClassVar = ID3(songs[current_song])
                 try:
@@ -538,26 +535,18 @@ def set_song_attrib() -> None:
                 try:
                     music_title.set(str(tags["TIT2"]))
                 except:
-                    music_title.set(songs[current_song].rstrip(".mp3"))
+                    music_title.set(os.path.splitext(songs[current_song])[0])
             except:
                 right_player_album_art_label.configure(image=default_album_img)
-                music_title.set(songs[current_song].rstrip(".mp3"))
+                music_title.set(os.path.splitext(songs[current_song])[0])
             left_player_music_list.selection_clear(0, END)
             left_player_music_list.select_set(current_song)
             music_time.set("0:00")
             config["last_song"] = songs[current_song]
-        elif songs[current_song][-3:] == ".xm":
+        else:
             album_name.set("")
             right_player_album_art_label.configure(image=default_album_img)
-            music_title.set(songs[current_song].rstrip(".xm"))
-            left_player_music_list.selection_clear(0, END)
-            left_player_music_list.select_set(current_song)
-            music_time.set("0:00")
-            config["last_song"] = songs[current_song]
-        elif songs[current_song][-4:] == ".wav":
-            album_name.set("")
-            right_player_album_art_label.configure(image=default_album_img)
-            music_title.set(songs[current_song].rstrip(".wav"))
+            music_title.set(os.path.splitext(songs[current_song])[0])
             left_player_music_list.selection_clear(0, END)
             left_player_music_list.select_set(current_song)
             music_time.set("0:00")
@@ -715,11 +704,41 @@ def fade(event):
             main_window.attributes('-alpha', 0.3)
 
 
+def changelog():
+    global sounder_dir, config
+    os.chdir(sounder_dir)
+    changelog_window: ClassVar = Toplevel()
+    changelog_window.title("Sounder Changelog")
+    changelog_window.geometry('300x200+{0}+{1}'.format(main_window.winfo_x() + 250, main_window.winfo_y() + 150))
+    changelog_window.iconbitmap(sounder_dir + "\\icon.ico")
+    changelog_window.grab_set()
+    changelog_window.resizable(width=FALSE, height=FALSE)
+    changelog_text: ClassVar = Text(changelog_window, bd=0, cursor="arrow", takefocus=0, font=('Bahnschrift', 11))
+    changelog_text.place(relx=0, rely=0, relwidth=1, relheight=1)
+    if config["theme"] == "light":
+        changelog_text.configure(selectbackground="#fff", selectforeground="#000")
+    else:
+        changelog_text.configure(selectbackground="#000", selectforeground="#fff", background="#000", foreground="#fff")
+    if os.path.isfile('changelog.txt'):
+        with open('changelog.txt', 'r') as text:
+            for line in text.readlines():
+                changelog_text.insert(END, line)
+        changelog_text.configure(state=DISABLED)
+    changelog_text.insert(END, "Never gonna give you up\nNever gonna let you down\nNever gonna run around and desert "
+                               "you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie "
+                               "and hurt you")
+    try:
+        os.chdir(config["path"].rstrip('\n'))
+    except Exception as e:
+        dump(str(e), config)
+    changelog_window.mainloop()
+
+
 # end
 # main init frame
 main_init_frame: ClassVar = Frame(main_window, width=800, height=500)
 main_init_frame.configure(background="#fff")
-main_init_frame.place(x=0, y=0, width=800, height=500)
+main_init_frame.place(relx=0, rely=0, width=800, height=500)
 logo_frame: ClassVar = Frame(main_init_frame)
 logo_frame.configure(background="#fff")
 logo_label: ClassVar = ttk.Label(logo_frame, image=logo_1_img, font='Bahnschrift 11', background='#fff'
@@ -742,7 +761,7 @@ error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=
 error_img_label.pack(pady=(170, 0))
 error_label.pack(pady=(20, 0))
 error_button.pack(pady=(60, 0))
-main_error_frame.place(x=0, y=0, width=800, height=500)
+main_error_frame.place(relx=0, rely=0, width=800, height=500)
 # end
 # settings frame
 main_settings_frame: ClassVar = Frame(main_window)
@@ -833,9 +852,9 @@ left_settings_fade_label.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_fade_button.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_frame_sixth.pack(anchor=W, fill=X)
 # end
-settings_version_label: ClassVar = ttk.Label(left_settings_frame, text="V" + version + " Sounder © by Mateusz Perczak",
-                                             font='Bahnschrift 11', style="W.TLabel")
-settings_version_label.pack(anchor=SW, padx=(6, 0), pady=(230, 0))
+settings_version_button: ClassVar = ttk.Button(left_settings_frame, text="V" + version + " Sounder © by Mateusz Perczak",
+                                               takefocus=False, command=changelog, cursor="hand2")
+settings_version_button.pack(anchor=SW, padx=(6, 0), pady=(220, 0))
 # main frame
 main_player_frame: ClassVar = Frame(main_window)
 main_player_frame.grid(row=0, column=0, sticky='news')
@@ -843,7 +862,7 @@ main_player_frame.grid(row=0, column=0, sticky='news')
 # top frame
 top_player_frame: ClassVar = Frame(main_player_frame)
 top_player_refresh_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
-                                                 command=lambda: refresh_dir)
+                                                 command=refresh_dir)
 top_player_folder_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
                                                 command=change_dir_btn)
 top_player_path_label: ClassVar = ttk.Label(top_player_frame, width=85, textvariable=path, font='Bahnschrift 11',

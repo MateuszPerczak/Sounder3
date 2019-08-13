@@ -1,0 +1,6 @@
+                           What's new?
+
+Added Changelog to Sounder!
+Added support for Ogg files!
+Fixed startup logo glitch!
+Some code optimizations!
