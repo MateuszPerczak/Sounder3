@@ -29,11 +29,12 @@ error_img: ClassVar = PhotoImage(file=sounder_dir + "\\error_light.png")
 # var
 path: ClassVar = StringVar()
 music_title: ClassVar = StringVar()
+music_artist: ClassVar = StringVar()
 music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.5"
+version: str = "3.0.6"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -223,9 +224,6 @@ def apply_theme() -> bool:
     main_theme.theme_use('clam')
     try:
         if config["theme"] == "light":
-            main_theme.configure("G.Horizontal.TProgressbar", foreground='#000', background='#000', lightcolor='#000',
-                                 darkcolor='#fff',
-                                 bordercolor='#fff', troughcolor='#fff')
             main_theme.configure("W.TLabel", background='#fff', foreground='#000', border='0')
             main_theme.configure("TButton", background='#fff', relief="flat", font=('Bahnschrift', 11),
                                  foreground='#000')
@@ -307,9 +305,6 @@ def apply_theme() -> bool:
             else:
                 left_settings_fade_button.configure(image=toggle_off_img)
         elif config["theme"] == "dark":
-            main_theme.configure("G.Horizontal.TProgressbar", foreground='#1e88e5', background='#1e88e5',
-                                 lightcolor='#1e88e5',
-                                 darkcolor='#1e88e5', bordercolor='#000', troughcolor='#000')
             main_theme.configure("W.TLabel", foreground='#fff', background='#000', border='0')
             main_theme.configure("TButton", relief="flat", background='#000',
                                  font=('Bahnschrift', 11), foreground='#fff')
@@ -398,14 +393,15 @@ def apply_theme() -> bool:
 
 
 def apply_settings() -> bool:
-    global config, main_window
+    global config
     try:
         left_settings_refresh_scale.set(config["refresh_time"])
         left_settings_duration_scale.set(config["transition_duration"])
         music_time.set("--:--")
         music_title.set("----------------------")
-        main_window.bind("<FocusIn>", fade)
-        main_window.bind("<FocusOut>", fade)
+        if config["fade"]:
+            main_window.bind("<FocusIn>", fade)
+            main_window.bind("<FocusOut>", fade)
     except Exception as e:
         dump(str(e), config)
         return False
@@ -416,9 +412,9 @@ def init_mixer() -> bool:
     global config
     try:
         if config["gtr_buffer"]:
-            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=8192)
+            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=8192,devicename=None)
         else:
-            mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
+            mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096, devicename=None)
         mixer.init()
         mixer.music.set_volume(99)
     except Exception as e:
@@ -533,19 +529,38 @@ def set_song_attrib() -> None:
                 except:
                     right_player_album_art_label.configure(image=default_album_img)
                 try:
+                    right_player_title_label.configure(font='Bahnschrift 11')
                     music_title.set(str(tags["TIT2"]))
                 except:
+                    if len(songs[current_song]) > 50:
+                        right_player_title_label.configure(font='Bahnschrift 10')
+                    else:
+                        right_player_title_label.configure(font='Bahnschrift 11')
                     music_title.set(os.path.splitext(songs[current_song])[0])
+                try:
+                    music_artist.set(tags["TPE1"])
+                except:
+                    music_artist.set("")
             except:
                 right_player_album_art_label.configure(image=default_album_img)
+                if len(songs[current_song]) > 50:
+                    right_player_title_label.configure(font='Bahnschrift 10')
+                else:
+                    right_player_title_label.configure(font='Bahnschrift 11')
                 music_title.set(os.path.splitext(songs[current_song])[0])
+                music_artist.set("")
             left_player_music_list.selection_clear(0, END)
             left_player_music_list.select_set(current_song)
             music_time.set("0:00")
             config["last_song"] = songs[current_song]
         else:
             album_name.set("")
+            music_artist.set("")
             right_player_album_art_label.configure(image=default_album_img)
+            if len(songs[current_song]) > 50:
+                right_player_title_label.configure(font='Bahnschrift 10')
+            else:
+                right_player_title_label.configure(font='Bahnschrift 11')
             music_title.set(os.path.splitext(songs[current_song])[0])
             left_player_music_list.selection_clear(0, END)
             left_player_music_list.select_set(current_song)
@@ -617,7 +632,7 @@ def mode_change() -> None:
 
 def show(window, scene) -> bool:
     if scene == "main_settings_frame":
-        main_window.title("Sounder3 > settings")
+        main_window.title("Sounder3 > Settings")
     elif scene == "main_error_frame":
         main_window.title("Sounder3 Error")
     else:
@@ -634,6 +649,16 @@ def close() -> None:
     main_player_frame.destroy()
     save_settings()
     sys.exit()
+
+
+def restart() -> None:
+    global sounder_dir
+    try:
+        os.chdir(sounder_dir)
+        os.system("start " + sys.argv[0])
+    except:
+        pass
+    close()
 
 
 def change_dir_btn() -> None:
@@ -690,18 +715,20 @@ def toggle_fade() -> None:
     if config["fade"]:
         left_settings_fade_button.configure(image=toggle_off_img)
         config["fade"] = False
-    else:
+        main_window.unbind("<FocusIn>")
+        main_window.unbind("<FocusOut>")
+    elif not config["fade"]:
         left_settings_fade_button.configure(image=toggle_on_img)
         config["fade"] = True
+        main_window.bind("<FocusIn>", fade)
+        main_window.bind("<FocusOut>", fade)
 
 
 def fade(event):
-    global main_window, config
-    if config["fade"]:
-        if str(event.type) == "FocusIn":
-            main_window.attributes('-alpha', 1)
-        elif str(event.type) == "FocusOut":
-            main_window.attributes('-alpha', 0.3)
+    if str(event.type) == "FocusIn":
+        main_window.attributes('-alpha', 1)
+    elif str(event.type) == "FocusOut":
+        main_window.attributes('-alpha', 0.3)
 
 
 def changelog():
@@ -713,12 +740,14 @@ def changelog():
     changelog_window.iconbitmap(sounder_dir + "\\icon.ico")
     changelog_window.grab_set()
     changelog_window.resizable(width=FALSE, height=FALSE)
-    changelog_text: ClassVar = Text(changelog_window, bd=0, cursor="arrow", takefocus=0, font=('Bahnschrift', 11))
-    changelog_text.place(relx=0, rely=0, relwidth=1, relheight=1)
+    changelog_text: ClassVar = Text(changelog_window, bd=0, cursor="no", takefocus=0, font=('Bahnschrift', 11))
+    changelog_text.place(relx=0.02, rely=0, relwidth=1, relheight=1)
     if config["theme"] == "light":
         changelog_text.configure(selectbackground="#fff", selectforeground="#000")
+        changelog_window.configure(background="#fff")
     else:
         changelog_text.configure(selectbackground="#000", selectforeground="#fff", background="#000", foreground="#fff")
+        changelog_window.configure(background="#000")
     if os.path.isfile('changelog.txt'):
         with open('changelog.txt', 'r') as text:
             for line in text.readlines():
@@ -756,8 +785,8 @@ error_img_label: ClassVar = ttk.Label(main_error_frame, image=error_img, backgro
                                       border='0')
 error_label = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000', border='0',
                         font='Bahnschrift 13', wraplength=700)
-error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="TRY AGAIN",
-                                    command=init_player)
+error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="RESTART",
+                                    command=restart)
 error_img_label.pack(pady=(170, 0))
 error_label.pack(pady=(20, 0))
 error_button.pack(pady=(60, 0))
@@ -907,11 +936,15 @@ right_player_time_label: ClassVar = ttk.Label(right_player_frame, textvariable=m
                                               style="W.TLabel")
 right_player_title_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_title, font='Bahnschrift 11',
                                                style="W.TLabel", wraplength=350)
+right_player_artist_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_artist, font='Bahnschrift 10',
+                                                style="W.TLabel")
+
 right_player_album_label.pack(pady=(10, 0))
 right_player_album_art_label.pack(pady=(2, 0))
-right_player_title_label.pack(ipady=2)
-right_player_time_label.pack(ipady=2)
-right_player_frame.pack()
+right_player_title_label.pack(pady=(2, 0), padx=0)
+right_player_artist_label.pack(pady=(0, 0))
+right_player_time_label.pack(pady=(2, 0))
+right_player_frame.pack(fill=X)
 # end
 # buttons_frame
 buttons_player_frame: ClassVar = Frame(right_player_frame)
@@ -921,10 +954,10 @@ buttons_player_play_button: ClassVar = ttk.Button(buttons_player_frame, cursor="
                                                   command=lambda: music("play"))
 buttons_player_forward_button: ClassVar = ttk.Button(buttons_player_frame, cursor="hand2", takefocus=False,
                                                      command=lambda: music("forward"))
-buttons_player_previous_button.pack(side=LEFT, ipadx=2)
-buttons_player_play_button.pack(side=LEFT, ipadx=2)
-buttons_player_forward_button.pack(side=LEFT, ipadx=2)
-buttons_player_frame.pack(pady=(20, 0))
+buttons_player_previous_button.pack(side=LEFT, padx=(2, 0))
+buttons_player_play_button.pack(side=LEFT, padx=(2, 0))
+buttons_player_forward_button.pack(side=LEFT, padx=(2, 0))
+buttons_player_frame.pack(pady=(10, 0))
 # end
 # mode frame
 mode_player_frame: ClassVar = Frame(right_player_frame)
