@@ -9,8 +9,7 @@ Python mp3 music player.
 | adding mp3 file support | ☑ |
 | adding xm file support | ☑ |
 | adding wav file supports | ☑ |
-| adding ogg file support | ☑ | 
-| adding flac file support | ☐ | 
+| adding ogg file support | ☑ |  
 | adding changelog to Sounder | ☑ | 
 | adding updater to Sounder | ☐ | 
 
