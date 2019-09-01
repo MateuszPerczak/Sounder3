@@ -11,7 +11,7 @@ Python mp3 music player.
 | adding wav file supports | ☑ |
 | adding ogg file support | ☑ |  
 | adding changelog to Sounder | ☑ | 
-| adding updater to Sounder | ☐ | 
+
 
 
 ## Authors
