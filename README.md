@@ -37,7 +37,7 @@ Logo designer: reallinfo
 
 
 ## Some pictures of application
-![Picture of playing music in application](https://github.com/losek1/Sounder3/blob/v3.0/images/NEW0.PNG)
-![Picture of settings in application](https://github.com/losek1/Sounder3/blob/v3.0/images/NEW1.PNG)
-![Picture without any playing song](https://github.com/losek1/Sounder3/blob/v3.0/images/NEW2.PNG)
-![Picture of dark mode](https://github.com/losek1/Sounder3/blob/v3.0/images/NEW3.PNG)
+![Picture of playing music in application](https://github.com/losek1/Sounder3/blob/master/images/NEW0.PNG)
+![Picture of settings in application](https://github.com/losek1/Sounder3/blob/master/images/NEW1.PNG)
+![Picture without any playing song](https://github.com/losek1/Sounder3/blob/master/images/NEW2.PNG)
+![Picture of dark mode](https://github.com/losek1/Sounder3/blob/master/images/NEW3.PNG)
