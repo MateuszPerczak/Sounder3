@@ -18,7 +18,7 @@ sounder_dir: str = os.path.dirname(sys.executable)
 user_path: str = os.path.expanduser("~")
 # end
 main_window: ClassVar = Tk()
-main_window.geometry("800x500")
+main_window.geometry("806x500")
 main_window.title("Sounder3")
 main_window.iconbitmap(sounder_dir + "\\icon.ico")
 main_window.resizable(width=FALSE, height=FALSE)
@@ -34,13 +34,11 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.6"
+version: str = "3.0.7"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
-songs_exists: bool = False
 play_button_state: bool = False
-mode: str = "r_n"
 default_album_img: ClassVar
 repeat_all_img: ClassVar
 repeat_one_img: ClassVar
@@ -86,25 +84,20 @@ def dump(value: str, cfg: Dict) -> None:
 def load_settings() -> bool:
     global config, version, sounder_dir
     os.chdir(sounder_dir)
+    config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
+              "gtr_buffer": False, "mode": "r_n",
+              "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False, "debug": False}
+
     if os.path.isfile('cfg.json'):
         try:
             with open('cfg.json', 'r') as data:
                 config = json.load(data)
             return True
-        except Exception as e:
-            dump(str(e), config)
-            return False
-    elif not os.path.isfile('cfg.json'):
-        config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
-                  "gtr_buffer": False,
-                  "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False}
-        try:
-            with open('cfg.json', 'w') as data:
-                json.dump(config, data)
-        except Exception as e:
-            dump(str(e), config)
-            return False
-        return True
+        except:
+            pass
+    with open('cfg.json', 'w') as data:
+        json.dump(config, data)
+    return True
 
 
 def save_settings() -> bool:
@@ -173,7 +166,7 @@ def refresh_dir() -> None:
 
 
 def verify_settings() -> None:
-    global config
+    global config, user_path
     try:
         if not type(config["refresh_time"]) is float:
             config["refresh_time"] = 1.0
@@ -197,7 +190,7 @@ def verify_settings() -> None:
     try:
         if not type(config["gtr_buffer"]) is bool:
             config["gtr_buffer"] = False
-    except :
+    except:
         config["gtr_buffer"] = False
     try:
         if not type(config["last_song"]) is str:
@@ -214,12 +207,29 @@ def verify_settings() -> None:
             config["fade"] = False
     except:
         config["fade"] = False
+    try:
+        if not type(config["mode"]) is str:
+            config["mode"] = "r_n"
+    except:
+        config["mode"] = "r_n"
+    try:
+        if not type(config["debug"]) is bool:
+            config["debug"] = False
+    except:
+        config["debug"] = False
+    try:
+        if not type(config["path"]) is str:
+            config["path"] = (user_path + "\\Music").replace('/', '\\')
+        else:
+            os.chdir(config["path"])
+    except:
+        config["path"] = (user_path + "\\Music").replace('/', '\\')
 
 
 def apply_theme() -> bool:
     global config, repeat_all_img, repeat_one_img, repeat_none_img, forward_img, play_img, previous_img, pause_img \
         , toggle_off_img, toggle_on_img, default_album_img, settings_img, back_img, folder_img, refresh_img \
-        , play_button_state, mode
+        , play_button_state
     main_theme = ttk.Style()
     main_theme.theme_use('clam')
     try:
@@ -290,11 +300,11 @@ def apply_theme() -> bool:
                 left_settings_buffer_button.configure(image=toggle_on_img)
             else:
                 left_settings_buffer_button.configure(image=toggle_off_img)
-            if mode == "r_n":
+            if config["mode"] == "r_n":
                 mode_player_mode_button.configure(image=repeat_none_img)
-            elif mode == "r_a":
+            elif config["mode"] == "r_a":
                 mode_player_mode_button.configure(image=repeat_all_img)
-            elif mode == "r_o":
+            elif config["mode"] == "r_o":
                 mode_player_mode_button.configure(image=repeat_one_img)
             if config["continue"]:
                 left_settings_continue_button.configure(image=toggle_on_img)
@@ -368,11 +378,11 @@ def apply_theme() -> bool:
                 left_settings_buffer_button.configure(image=toggle_on_img)
             else:
                 left_settings_buffer_button.configure(image=toggle_off_img)
-            if mode == "r_n":
+            if config["mode"] == "r_n":
                 mode_player_mode_button.configure(image=repeat_none_img)
-            elif mode == "r_a":
+            elif config["mode"] == "r_a":
                 mode_player_mode_button.configure(image=repeat_all_img)
-            elif mode == "r_o":
+            elif config["mode"] == "r_o":
                 mode_player_mode_button.configure(image=repeat_one_img)
             if config["continue"]:
                 left_settings_continue_button.configure(image=toggle_on_img)
@@ -392,6 +402,11 @@ def apply_theme() -> bool:
         return False
 
 
+def debug(char) -> None:
+    if char.keysym == "F12":
+        show(main_debug_screen, "main_debug_screen")
+
+
 def apply_settings() -> bool:
     global config
     try:
@@ -402,6 +417,8 @@ def apply_settings() -> bool:
         if config["fade"]:
             main_window.bind("<FocusIn>", fade)
             main_window.bind("<FocusOut>", fade)
+        if config["debug"]:
+            main_window.bind('<Key>', debug)
     except Exception as e:
         dump(str(e), config)
         return False
@@ -412,7 +429,7 @@ def init_mixer() -> bool:
     global config
     try:
         if config["gtr_buffer"]:
-            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=8192,devicename=None)
+            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=8192, devicename=None)
         else:
             mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096, devicename=None)
         mixer.init()
@@ -439,15 +456,10 @@ def init_player() -> None:
                 if apply_theme():
                     if init_mixer():
                         if load_music():
-                            pass
-                        else:
-                            while not change_dir():
-                                pass
-                            load_music()
-                        start_music()
-                        refresh_window()
-                        set_song_attrib()
-                        show(main_player_frame, "main_player_frame")
+                            start_music()
+                            refresh_window()
+                            set_song_attrib()
+                            show(main_player_frame, "main_player_frame")
     except Exception as e:
         dump(str(e), config)
 
@@ -604,12 +616,12 @@ def song_stats() -> None:
 
 
 def play_loop() -> None:
-    global mode, current_song, num_of_songs
-    if mode == "r_n":
+    global config, current_song, num_of_songs
+    if config["mode"] == "r_n":
         music("forward")
-    elif mode == "r_o":
+    elif config["mode"] == "r_o":
         music("play")
-    elif mode == "r_a":
+    elif config["mode"] == "r_a":
         if current_song < num_of_songs:
             music("forward")
         else:
@@ -618,15 +630,15 @@ def play_loop() -> None:
 
 
 def mode_change() -> None:
-    global mode
-    if mode == "r_n":
-        mode = "r_a"
+    global config
+    if config["mode"] == "r_n":
+        config["mode"] = "r_a"
         mode_player_mode_button.configure(image=repeat_all_img)
-    elif mode == "r_a":
-        mode = "r_o"
+    elif config["mode"] == "r_a":
+        config["mode"] = "r_o"
         mode_player_mode_button.configure(image=repeat_one_img)
-    elif mode == "r_o":
-        mode = "r_n"
+    elif config["mode"] == "r_o":
+        config["mode"] = "r_n"
         mode_player_mode_button.configure(image=repeat_none_img)
 
 
@@ -635,6 +647,8 @@ def show(window, scene) -> bool:
         main_window.title("Sounder3 > Settings")
     elif scene == "main_error_frame":
         main_window.title("Sounder3 Error")
+    elif scene == "main_debug_screen":
+        main_window.title("Debug screen")
     else:
         main_window.title("Sounder3")
     try:
@@ -653,12 +667,14 @@ def close() -> None:
 
 def restart() -> None:
     global sounder_dir
+    save_settings()
+    main_player_frame.destroy()
     try:
         os.chdir(sounder_dir)
         os.system("start " + sys.argv[0])
     except:
         pass
-    close()
+    sys.exit()
 
 
 def change_dir_btn() -> None:
@@ -764,10 +780,36 @@ def changelog():
 
 
 # end
+# debug screen
+main_debug_screen: ClassVar = Frame(main_window)
+main_debug_screen.configure(background="#fff")
+label_debug: ClassVar = ttk.Label(main_debug_screen, text="Debug Screen", font='Bahnschrift 14', background='#fff',
+                                  foreground='#000', border='0', anchor="center")
+panic_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="PANIC!",
+                                    command=lambda: dump("Test: Test: Test: Test: Test: Test: Test: ", {}))
+restart_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="RESTART"
+                                      , command=restart)
+main_init_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN INIT FRAME", cursor="hand2", takefocus=False
+                                        , command=lambda: show(main_init_frame, "main_init_frame"))
+main_settings_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN SETTINGS FRAME", cursor="hand2",
+                                            takefocus=False
+                                            , command=lambda: show(main_settings_frame, "main_settings_frame"))
+
+main_player_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN PLAYER FRAME", cursor="hand2"
+                                          , takefocus=False,
+                                          command=lambda: show(main_player_frame, "main_player_frame"))
+label_debug.place(relx=0.5, rely=0, relwidth=1, relheight=0.1, anchor="n")
+panic_button.place(relx=0.5, rely=0.2, relheight=0.08, relwidth=0.3, anchor="n")
+restart_button.place(relx=0.5, rely=0.3, relheight=0.08, relwidth=0.3, anchor="n")
+main_init_button.place(relx=0.5, rely=0.4, relheight=0.08, relwidth=0.3, anchor="n")
+main_settings_button.place(relx=0.5, rely=0.5, relheight=0.08, relwidth=0.3, anchor="n")
+main_player_button.place(relx=0.5, rely=0.6, relheight=0.08, relwidth=0.3, anchor="n")
+main_debug_screen.place(relx=0.5, rely=0, anchor="n", width=806, height=500)
+# end
 # main init frame
-main_init_frame: ClassVar = Frame(main_window, width=800, height=500)
+main_init_frame: ClassVar = Frame(main_window, width=806, height=500)
 main_init_frame.configure(background="#fff")
-main_init_frame.place(relx=0, rely=0, width=800, height=500)
+main_init_frame.place(relx=0, rely=0, width=806, height=500)
 logo_frame: ClassVar = Frame(main_init_frame)
 logo_frame.configure(background="#fff")
 logo_label: ClassVar = ttk.Label(logo_frame, image=logo_1_img, font='Bahnschrift 11', background='#fff'
@@ -779,18 +821,29 @@ version_label.pack()
 logo_frame.pack(pady=(170, 0))
 # end
 # main error frame
-main_error_frame: ClassVar = Frame(main_window, width=800, height=500)
+main_error_frame: ClassVar = Frame(main_window, width=806, height=500)
 main_error_frame.configure(background="#fff")
 error_img_label: ClassVar = ttk.Label(main_error_frame, image=error_img, background='#fff', foreground='#000',
                                       border='0')
-error_label = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000', border='0',
-                        font='Bahnschrift 13', wraplength=700)
+error_label: ClassVar = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000',
+                                  border='0',
+                                  font='Bahnschrift 13', wraplength=700)
+error_info_one: ClassVar = ttk.Label(main_error_frame, background='#fff', foreground='#000', border='0',
+                                     font='Bahnschrift 11', text="The application unexpectedly exited!")
+error_info_two: ClassVar = ttk.Label(main_error_frame, background='#fff', foreground='#000', border='0',
+                                     font='Bahnschrift 11', text="You can find Diagnostic information in the error log")
+
 error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="RESTART",
                                     command=restart)
-error_img_label.pack(pady=(170, 0))
-error_label.pack(pady=(20, 0))
-error_button.pack(pady=(60, 0))
-main_error_frame.place(relx=0, rely=0, width=800, height=500)
+error_version_label: ClassVar = ttk.Label(main_error_frame, text="V" + version, font='Bahnschrift 11'
+                                          , background='#fff', foreground='#000', border='6')
+error_img_label.place(relx=0.5, rely=0.15, anchor="n")
+error_label.place(relx=0.5, rely=0.4, anchor="n")
+error_info_one.place(relx=0.5, rely=0.5, anchor="n")
+error_info_two.place(relx=0.5, rely=0.54, anchor="n")
+error_button.place(relx=0.5, rely=0.76, anchor="n")
+error_version_label.place(relx=0.96, rely=0.94, anchor="n")
+main_error_frame.place(relx=0.5, rely=0, width=806, height=500, anchor="n")
 # end
 # settings frame
 main_settings_frame: ClassVar = Frame(main_window)
@@ -803,7 +856,7 @@ top_settings_title_label: ClassVar = ttk.Label(top_settings_frame, text="Setting
 top_settings_back_button: ClassVar = ttk.Button(top_settings_frame, cursor="hand2", takefocus=False,
                                                 command=lambda: show(main_player_frame, "main_player_frame"))
 top_settings_title_label.pack(side=LEFT, padx=(6, 0))
-top_settings_back_button.pack(side=LEFT, padx=(680, 0))
+top_settings_back_button.pack(side=LEFT, padx=(686, 0))
 top_settings_frame.pack(fill=X)
 # end
 # center settings frame
@@ -881,7 +934,8 @@ left_settings_fade_label.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_fade_button.pack(side=LEFT, padx=(6, 0), pady=(0, 0))
 left_settings_frame_sixth.pack(anchor=W, fill=X)
 # end
-settings_version_button: ClassVar = ttk.Button(left_settings_frame, text="V" + version + " Sounder © by Mateusz Perczak",
+settings_version_button: ClassVar = ttk.Button(left_settings_frame,
+                                               text="V" + version + " Sounder © by Mateusz Perczak",
                                                takefocus=False, command=changelog, cursor="hand2")
 settings_version_button.pack(anchor=SW, padx=(6, 0), pady=(220, 0))
 # main frame
@@ -894,14 +948,14 @@ top_player_refresh_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2
                                                  command=refresh_dir)
 top_player_folder_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
                                                 command=change_dir_btn)
-top_player_path_label: ClassVar = ttk.Label(top_player_frame, width=85, textvariable=path, font='Bahnschrift 11',
-                                            style="W.TLabel")
+top_player_path_label: ClassVar = ttk.Label(top_player_frame, width=85, textvariable=path, font='Bahnschrift 11'
+                                            , style="W.TLabel")
 top_player_settings_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
                                                   command=lambda: show(main_settings_frame, "main_settings_frame"))
 top_player_refresh_button.pack(side=LEFT)
 top_player_folder_button.pack(side=LEFT)
 top_player_path_label.pack(side=LEFT, padx=0.5)
-top_player_settings_button.pack(side=LEFT, padx=6)
+top_player_settings_button.pack(side=LEFT, padx=(12, 0))
 top_player_frame.pack(anchor=W)
 # end
 # bottom_frame
