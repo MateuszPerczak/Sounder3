@@ -72,7 +72,7 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\libvorbis-0.dll"; DestDir: "{app}"; F
 Source: "C:\Users\Mateusz\Desktop\Sounder3\libvorbisfile-3.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\libwebp-5.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\logo_1.png"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "C:\Users\Mateusz\Desktop\Sounder3\mfc140u.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\Mateusz\Desktop\Sounder3\_elementtree.pyd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pause_dark.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pause_light.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\play_dark.png"; DestDir: "{app}"; Flags: ignoreversion

@@ -2,6 +2,7 @@ import os
 import time
 import threading
 import json
+import logging
 from pygame import mixer
 from tkinter import *
 from tkinter import ttk
@@ -34,7 +35,7 @@ music_time: ClassVar = StringVar()
 album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.7"
+version: str = "3.0.8"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -62,22 +63,10 @@ logo_2_img: ClassVar
 # errors
 
 
-def dump(value: str, cfg: Dict) -> None:
-    global sounder_dir
-    try:
-        os.chdir(sounder_dir)
-        with open('errors.log', 'a') as data:
-            data.write(value + "\n")
-            data.write("Settings dump: \n" + str(cfg) + '\n')
-            data.write("You can report a problem on " + "\"https://github.com/losek1/Sounder3/issues\" \n")
-    except:
-        pass
-    if bool(config["path"]):
-        os.chdir(config["path"])
+def dump(value: ClassVar) -> None:
+    logging.error(value, exc_info=True)
     error_reason.set(value)
     show(main_error_frame, "main_error_frame")
-
-
 # end
 
 
@@ -110,7 +99,7 @@ def save_settings() -> bool:
             os.chdir(config["path"])
             return True
         except Exception as e:
-            dump(str(e), config)
+            dump(e)
             return False
 
 
@@ -393,12 +382,11 @@ def apply_theme() -> bool:
             else:
                 left_settings_fade_button.configure(image=toggle_off_img)
         else:
-            dump("Failed to apply theme", config)
             config["theme"] = "light"
             return False
         return True
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
         return False
 
 
@@ -420,7 +408,7 @@ def apply_settings() -> bool:
         if config["debug"]:
             main_window.bind('<Key>', debug)
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
         return False
     return True
 
@@ -435,14 +423,14 @@ def init_mixer() -> bool:
         mixer.init()
         mixer.music.set_volume(99)
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
         return False
     try:
         status_thread = threading.Thread(target=song_stats, )
         status_thread.daemon = True
         status_thread.start()
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
         return False
     return True
 
@@ -461,7 +449,7 @@ def init_player() -> None:
                             set_song_attrib()
                             show(main_player_frame, "main_player_frame")
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
 
 
 def music(button) -> None:
@@ -612,7 +600,7 @@ def song_stats() -> None:
                         play_loop()
                 time.sleep(float(config["refresh_time"] * 0.5))
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
 
 
 def play_loop() -> None:
@@ -655,7 +643,7 @@ def show(window, scene) -> bool:
         window.tkraise()
         return True
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
         return False
 
 
@@ -698,46 +686,58 @@ def set_duration(value) -> None:
 
 def toggle_theme() -> None:
     global config
-    if config["theme"] == "light":
-        config["theme"] = "dark"
-    elif config["theme"] == "dark":
-        config["theme"] = "light"
-    if apply_theme():
-        set_song_attrib()
+    try:
+        if config["theme"] == "light":
+            config["theme"] = "dark"
+        elif config["theme"] == "dark":
+            config["theme"] = "light"
+        if apply_theme():
+            set_song_attrib()
+    except Exception as e:
+        dump(e)
 
 
 def toggle_buffer() -> None:
     global config
-    if config["gtr_buffer"]:
-        left_settings_buffer_button.configure(image=toggle_off_img)
-        config["gtr_buffer"] = False
-    else:
-        left_settings_buffer_button.configure(image=toggle_on_img)
-        config["gtr_buffer"] = True
+    try:
+        if config["gtr_buffer"]:
+            left_settings_buffer_button.configure(image=toggle_off_img)
+            config["gtr_buffer"] = False
+        else:
+            left_settings_buffer_button.configure(image=toggle_on_img)
+            config["gtr_buffer"] = True
+    except Exception as e:
+        dump(e)
 
 
 def toggle_continue() -> None:
     global config
-    if config["continue"]:
-        left_settings_continue_button.configure(image=toggle_off_img)
-        config["continue"] = False
-    else:
-        left_settings_continue_button.configure(image=toggle_on_img)
-        config["continue"] = True
+    try:
+        if config["continue"]:
+            left_settings_continue_button.configure(image=toggle_off_img)
+            config["continue"] = False
+        else:
+            left_settings_continue_button.configure(image=toggle_on_img)
+            config["continue"] = True
+    except Exception as e:
+        dump(e)
 
 
 def toggle_fade() -> None:
     global config
-    if config["fade"]:
-        left_settings_fade_button.configure(image=toggle_off_img)
-        config["fade"] = False
-        main_window.unbind("<FocusIn>")
-        main_window.unbind("<FocusOut>")
-    elif not config["fade"]:
-        left_settings_fade_button.configure(image=toggle_on_img)
-        config["fade"] = True
-        main_window.bind("<FocusIn>", fade)
-        main_window.bind("<FocusOut>", fade)
+    try:
+        if config["fade"]:
+            left_settings_fade_button.configure(image=toggle_off_img)
+            config["fade"] = False
+            main_window.unbind("<FocusIn>")
+            main_window.unbind("<FocusOut>")
+        elif not config["fade"]:
+            left_settings_fade_button.configure(image=toggle_on_img)
+            config["fade"] = True
+            main_window.bind("<FocusIn>", fade)
+            main_window.bind("<FocusOut>", fade)
+    except Exception as e:
+        dump(e)
 
 
 def fade(event):
@@ -775,7 +775,7 @@ def changelog():
     try:
         os.chdir(config["path"].rstrip('\n'))
     except Exception as e:
-        dump(str(e), config)
+        dump(e)
     changelog_window.mainloop()
 
 
@@ -786,7 +786,7 @@ main_debug_screen.configure(background="#fff")
 label_debug: ClassVar = ttk.Label(main_debug_screen, text="Debug Screen", font='Bahnschrift 14', background='#fff',
                                   foreground='#000', border='0', anchor="center")
 panic_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="PANIC!",
-                                    command=lambda: dump("Test: Test: Test: Test: Test: Test: Test: ", {}))
+                                    command=lambda: show(main_error_frame, "main_error_frame"))
 restart_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="RESTART"
                                       , command=restart)
 main_init_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN INIT FRAME", cursor="hand2", takefocus=False
@@ -825,9 +825,11 @@ main_error_frame: ClassVar = Frame(main_window, width=806, height=500)
 main_error_frame.configure(background="#fff")
 error_img_label: ClassVar = ttk.Label(main_error_frame, image=error_img, background='#fff', foreground='#000',
                                       border='0')
-error_label: ClassVar = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff', foreground='#000',
-                                  border='0',
-                                  font='Bahnschrift 13', wraplength=700)
+error_label: ClassVar = ttk.Label(main_error_frame, font='Bahnschrift 14', text="Error", background='#fff'
+                                  , foreground='#000')
+error_reason_label: ClassVar = ttk.Label(main_error_frame, textvariable=error_reason, background='#fff'
+                                         , foreground='#000', border='0', font='Bahnschrift 13', wraplength=700
+                                         , justify='center')
 error_info_one: ClassVar = ttk.Label(main_error_frame, background='#fff', foreground='#000', border='0',
                                      font='Bahnschrift 11', text="The application unexpectedly exited!")
 error_info_two: ClassVar = ttk.Label(main_error_frame, background='#fff', foreground='#000', border='0',
@@ -838,9 +840,10 @@ error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=
 error_version_label: ClassVar = ttk.Label(main_error_frame, text="V" + version, font='Bahnschrift 11'
                                           , background='#fff', foreground='#000', border='6')
 error_img_label.place(relx=0.5, rely=0.15, anchor="n")
-error_label.place(relx=0.5, rely=0.4, anchor="n")
-error_info_one.place(relx=0.5, rely=0.5, anchor="n")
-error_info_two.place(relx=0.5, rely=0.54, anchor="n")
+error_label.place(relx=0.5, rely=0.36, anchor="n")
+error_reason_label.place(relx=0.5, rely=0.45, anchor="n")
+error_info_one.place(relx=0.5, rely=0.6, anchor="n")
+error_info_two.place(relx=0.5, rely=0.64, anchor="n")
 error_button.place(relx=0.5, rely=0.76, anchor="n")
 error_version_label.place(relx=0.96, rely=0.94, anchor="n")
 main_error_frame.place(relx=0.5, rely=0, width=806, height=500, anchor="n")
@@ -1021,7 +1024,7 @@ mode_player_mode_button.pack()
 mode_player_frame.pack()
 # end
 
-
+logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.DEBUG)
 show(main_init_frame, "main_init_frame")
 init_thread = threading.Thread(target=init_player, )
 init_thread.daemon = True

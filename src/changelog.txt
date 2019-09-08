@@ -1,4 +1,5 @@
                            What's new?
 
 Some code optimizations!
+Updated error dumping method!
 
