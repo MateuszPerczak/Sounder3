@@ -12,7 +12,8 @@ Python mp3 music player.
 | adding ogg file support | ☑ |  
 | adding changelog to Sounder | ☑ | 
 
-
+## icons
+https://icons8.com/
 
 ## Authors
 Main programmer, designer: Mateusz Perczak
