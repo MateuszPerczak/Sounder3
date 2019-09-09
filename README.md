@@ -12,7 +12,7 @@ Python mp3 music player.
 | adding ogg file support | ☑ |  
 | adding changelog to Sounder | ☑ | 
 
-## icons
+## Icons
 https://icons8.com/
 
 ## Authors
