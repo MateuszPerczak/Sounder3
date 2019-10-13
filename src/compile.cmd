@@ -3,6 +3,7 @@ xcopy C:\Users\%username%\PycharmProjects\Python\Sounder3\*.ico C:\Users\%userna
 xcopy C:\Users\%username%\PycharmProjects\Python\Sounder3\*.txt C:\Users\%username%\PycharmProjects\Python\Sounder3\dist\Sounder3
 xcopy C:\Users\%username%\PycharmProjects\Python\Sounder3\*.log C:\Users\%username%\PycharmProjects\Python\Sounder3\dist\Sounder3
 xcopy C:\Users\%username%\PycharmProjects\Python\Sounder3\*.json C:\Users\%username%\PycharmProjects\Python\Sounder3\dist\Sounder3
+xcopy C:\Users\%username%\PycharmProjects\Python\Sounder3\*.exe C:\Users\%username%\PycharmProjects\Python\Sounder3\dist\Sounder3
 ping localhost -n 2 >nul
 cd "C:\Users\%username%\Desktop\"
 md "Sounder3"

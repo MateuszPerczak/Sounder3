@@ -14,6 +14,7 @@ try:
     from mutagen.id3 import ID3
     from mutagen.mp3 import MP3
     from typing import ClassVar, Dict, List
+    import requests
 except ImportError:
     sys.exit(1)
 
@@ -41,7 +42,7 @@ album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.0.9"
+version: str = "3.1.0"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -88,8 +89,8 @@ def load_settings() -> bool:
     os.chdir(sounder_dir)
     config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
               "gtr_buffer": False, "mode": "r_n",
-              "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False, "debug": False}
-
+              "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False, "debug": False,
+              "update": True}
     if os.path.isfile('cfg.json'):
         try:
             with open('cfg.json', 'r') as data:
@@ -168,7 +169,7 @@ def refresh_dir() -> None:
 
 
 def verify_settings() -> None:
-    global config, user_path
+    global config, user_path, version
     try:
         if not type(config["refresh_time"]) is float:
             config["refresh_time"] = 1.0
@@ -181,6 +182,8 @@ def verify_settings() -> None:
         config["theme"] = "light"
     try:
         if not type(config["version"]) is str:
+            config["version"] = version
+        elif int(config["version"].replace(".", "")) < int(version.replace(".", "")):
             config["version"] = version
     except:
         config["version"] = version
@@ -226,6 +229,11 @@ def verify_settings() -> None:
             os.chdir(config["path"])
     except:
         config["path"] = (user_path + "\\Music").replace('/', '\\')
+    try:
+        if not type(config["update"]) is bool:
+            config["update"] = True
+    except:
+        config["update"] = True
 
 
 def apply_theme() -> bool:
@@ -268,6 +276,7 @@ def apply_theme() -> bool:
             main_window.configure(background="#fff")
             settings_frame_fifth.configure(background="#fff")
             settings_frame_sixth.configure(background="#fff")
+            settings_frame_seventh.configure(background="#fff")
             left_player_frame.configure(background="#fff")
             bottom_time_frame.configure(background="#fff")
             default_album_img = ImageTk.PhotoImage(Image.open(sounder_dir + "\\cover_art_light.png").resize((220, 220)))
@@ -315,9 +324,12 @@ def apply_theme() -> bool:
                 sixth_settings_fade_button.configure(image=toggle_on_img)
             else:
                 sixth_settings_fade_button.configure(image=toggle_off_img)
+            if config["update"]:
+                seventh_settings_update_button.configure(image=toggle_on_img)
+            else:
+                seventh_settings_update_button.configure(image=toggle_off_img)
         elif config["theme"] == "dark":
             main_theme.configure("W.TLabel", foreground='#fff', background='#000', border='0')
-
             main_theme.configure("W.Horizontal.TProgressbar", foreground='#000', background='#1e88e5', lightcolor='#000'
                                  , darkcolor='#000', bordercolor='#000', troughcolor='#000')
             main_theme.configure("TButton", relief="flat", background='#000',
@@ -346,6 +358,7 @@ def apply_theme() -> bool:
             main_window.configure(background="#000")
             settings_frame_fifth.configure(background="#000")
             settings_frame_sixth.configure(background="#000")
+            settings_frame_seventh.configure(background="#000")
             left_player_frame.configure(background="#000")
             bottom_time_frame.configure(background="#000")
             default_album_img = ImageTk.PhotoImage(Image.open(sounder_dir + "\\cover_art_dark.png").resize((220, 220)))
@@ -393,6 +406,10 @@ def apply_theme() -> bool:
                 sixth_settings_fade_button.configure(image=toggle_on_img)
             else:
                 sixth_settings_fade_button.configure(image=toggle_off_img)
+            if config["update"]:
+                seventh_settings_update_button.configure(image=toggle_on_img)
+            else:
+                seventh_settings_update_button.configure(image=toggle_off_img)
         else:
             config["theme"] = "light"
             return False
@@ -475,6 +492,8 @@ def init_player() -> None:
                             refresh_window()
                             set_song_attrib()
                             show(main_player_frame, "main_player_frame")
+                            if config["update"]:
+                                check_for_update()
     except Exception as e:
         dump(e)
 
@@ -684,6 +703,54 @@ def show(window, scene) -> bool:
         return False
 
 
+def check_for_update() -> None:
+    global version
+    try:
+        server_version = requests.get("https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text
+        if int(version.replace(".", "")) < int(server_version.replace(".", "")):
+            os.chdir(sounder_dir)
+            update_window: ClassVar = Toplevel()
+            update_window.title("Update Available")
+            update_window.geometry('400x200+{0}+{1}'.format(main_window.winfo_x() + 200, main_window.winfo_y() + 150))
+            update_window.iconbitmap(sounder_dir + "\\icon.ico")
+            update_window.grab_set()
+            update_window.resizable(width=FALSE, height=FALSE)
+            update_label: ClassVar = ttk.Label(update_window, text="New update is available", anchor="center"
+                                               , font='Bahnschrift 14')
+            current_version_label: ClassVar = ttk.Label(update_window, text="Current version: \n           "
+                                                                            + str(version), anchor="center"
+                                                        , font='Bahnschrift 12')
+            new_version_label: ClassVar = ttk.Label(update_window, text="New version: \n        "
+                                                                        + str(server_version), anchor="center"
+                                                    , font='Bahnschrift 12')
+            update_now_button: ClassVar = ttk.Button(update_window, text="Update now", takefocus=0, cursor="hand2"
+                                                     , command=update)
+            update_later_button: ClassVar = ttk.Button(update_window, text="Update later", takefocus=0, cursor="hand2"
+                                                       , command=lambda: update_window.destroy())
+            update_label.place(relx=0, rely=0.02, relwidth=1)
+            current_version_label.place(relx=0, rely=0.3, relwidth=0.5)
+            new_version_label.place(relx=0.5, rely=0.3, relwidth=0.5)
+            update_now_button.place(relx=0.5, rely=0.828, relwidth=0.5)
+            update_later_button.place(relx=0, rely=0.828, relwidth=0.5)
+            if config["theme"] == "light":
+                update_window.configure(background="#fff")
+                update_label.configure(background="#fff", foreground="#000")
+                current_version_label.configure(background="#fff", foreground="#000")
+                new_version_label.configure(background="#fff", foreground="#000")
+            else:
+                update_window.configure(background="#000")
+                update_label.configure(background="#000", foreground="#fff")
+                current_version_label.configure(background="#000", foreground="#fff")
+                new_version_label.configure(background="#000", foreground="#fff")
+            try:
+                os.chdir(config["path"])
+            except Exception as e:
+                dump(e)
+            update_window.mainloop()
+    except:
+        pass
+
+
 def close() -> None:
     main_player_frame.destroy()
     save_settings()
@@ -697,6 +764,19 @@ def restart() -> None:
     try:
         os.chdir(sounder_dir)
         os.system("start " + sys.argv[0])
+    except:
+        pass
+    sys.exit()
+
+
+def update() -> None:
+    global sounder_dir
+    main_player_frame.destroy()
+    save_settings()
+    try:
+        os.chdir(sounder_dir)
+        if os.path.isfile("Elevator.exe"):
+            os.system("start Elevator.exe")
     except:
         pass
     sys.exit()
@@ -776,6 +856,19 @@ def toggle_fade() -> None:
             config["fade"] = True
             main_window.bind("<FocusIn>", fade)
             main_window.bind("<FocusOut>", fade)
+    except Exception as e:
+        dump(e)
+
+
+def toggle_update():
+    global config
+    try:
+        if config["update"]:
+            seventh_settings_update_button.configure(image=toggle_off_img)
+            config["update"] = False
+        elif not config["update"]:
+            seventh_settings_update_button.configure(image=toggle_on_img)
+            config["update"] = True
     except Exception as e:
         dump(e)
 
@@ -965,6 +1058,19 @@ sixth_settings_fade_label.pack(side=LEFT, padx=(0, 5))
 sixth_settings_fade_button.pack(side=LEFT, padx=(3, 0))
 settings_frame_sixth.place(relx=0.005, rely=0.48, width=300, height=40)
 # end
+# seventh setting
+settings_frame_seventh: ClassVar = Frame(main_settings_frame)
+seventh_settings_update_label: ClassVar = ttk.Label(settings_frame_seventh, text="Check for updates",
+                                                font='Bahnschrift 11', style="W.TLabel")
+seventh_settings_update_button: ClassVar = ttk.Button(settings_frame_seventh, cursor="hand2", takefocus=False,
+                                                  command=toggle_update)
+seventh_settings_update_label.pack(side=LEFT, padx=(0, 5))
+seventh_settings_update_button.pack(side=LEFT, padx=(3, 0))
+settings_frame_seventh.place(relx=0.005, rely=0.56, width=300, height=40)
+# end
+# check_for_update
+
+
 settings_version_button: ClassVar = ttk.Button(main_settings_frame,
                                                text="V" + version + " Sounder © by Mateusz Perczak",
                                                takefocus=False, command=changelog, cursor="hand2")

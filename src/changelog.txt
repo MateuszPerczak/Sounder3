@@ -1,4 +1,4 @@
                            What's new?
 
-Big code optimizations!
-
+Added updater to sounder!
+Some code optimizations!

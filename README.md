@@ -11,7 +11,7 @@ Python mp3 music player.
 | adding wav file supports | ☑ |
 | adding ogg file support | ☑ |  
 | adding changelog to Sounder | ☑ | 
-| adding updater to Sounder | ☐ | 
+| adding updater to Sounder | ☑ | 
 ## Icons
 https://icons8.com/
 
@@ -36,6 +36,10 @@ Logo designer: reallinfo
 + mutagen
 + typing
 + logging
++ requests
++ zipfile
++ random
++ ctypes
 
 ## Some pictures of application
 ![Picture of playing music in application](https://github.com/losek1/Sounder3/blob/master/images/NEW0.PNG)
