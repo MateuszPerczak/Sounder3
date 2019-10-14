@@ -40,10 +40,11 @@ size: ClassVar = StringVar()
 
 
 def is_admin() -> bool:
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
+    return True
+    # try:
+    #     return ctypes.windll.shell32.IsUserAnAdmin()
+    # except:
+    #     return False
 
 
 def load_config() -> bool:
@@ -63,7 +64,7 @@ def check_for_update() -> bool:
     global config, server_version
     try:
         server_version = requests.get(
-            "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text
+            "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text.strip()
         if int(config["version"].replace(".", "")) < int(server_version.replace(".", "")):
             return True
         else:
@@ -75,8 +76,7 @@ def check_for_update() -> bool:
 def download_update() -> bool:
     global server_version, sounder_dir
     try:
-        server_zip = requests.get("https://github.com/losek1/Sounder3/releases/download/v" + str(server_version)
-                                  + "/package.zip", stream=True)
+        server_zip = requests.get("https://github.com/losek1/Sounder3/releases/download/v" + str(server_version) + "/package.zip", stream=True)
         file_size: float = round(int(server_zip.headers.get('Content-Length')) / 1000000, 1)
         bytes_downloaded: float = 0
         info_progress["maximum"] = int(server_zip.headers.get('Content-Length'))
