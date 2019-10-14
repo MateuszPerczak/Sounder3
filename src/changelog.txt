@@ -1,4 +1,3 @@
                            What's new?
 
-Added updater to sounder!
 Some code optimizations!

@@ -36,7 +36,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "C:\Users\Mateusz\Desktop\Sounder3\Sounder3.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\Elevator.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\Mateusz\Desktop\Sounder3\Updater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.pyd"; DestDir: "{app}"; Flags: ignoreversion 
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.png"; DestDir: "{app}"; Flags: ignoreversion 
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.log"; DestDir: "{app}"; Flags: ignoreversion 

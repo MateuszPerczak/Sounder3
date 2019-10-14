@@ -42,7 +42,7 @@ album_name: ClassVar = StringVar()
 error_reason: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.0"
+version: str = "3.1.1"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -704,11 +704,11 @@ def show(window, scene) -> bool:
 
 
 def check_for_update() -> None:
-    global version
+    global version, sounder_dir
     try:
-        server_version = requests.get("https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text
+        server_version = requests.get(
+            "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text
         if int(version.replace(".", "")) < int(server_version.replace(".", "")):
-            os.chdir(sounder_dir)
             update_window: ClassVar = Toplevel()
             update_window.title("Update Available")
             update_window.geometry('400x200+{0}+{1}'.format(main_window.winfo_x() + 200, main_window.winfo_y() + 150))
@@ -724,7 +724,7 @@ def check_for_update() -> None:
                                                                         + str(server_version), anchor="center"
                                                     , font='Bahnschrift 12')
             update_now_button: ClassVar = ttk.Button(update_window, text="Update now", takefocus=0, cursor="hand2"
-                                                     , command=update)
+                                                     , command=lambda: close("update"))
             update_later_button: ClassVar = ttk.Button(update_window, text="Update later", takefocus=0, cursor="hand2"
                                                        , command=lambda: update_window.destroy())
             update_label.place(relx=0, rely=0.02, relwidth=1)
@@ -742,43 +742,22 @@ def check_for_update() -> None:
                 update_label.configure(background="#000", foreground="#fff")
                 current_version_label.configure(background="#000", foreground="#fff")
                 new_version_label.configure(background="#000", foreground="#fff")
-            try:
-                os.chdir(config["path"])
-            except Exception as e:
-                dump(e)
             update_window.mainloop()
     except:
         pass
 
 
-def close() -> None:
-    main_player_frame.destroy()
-    save_settings()
-    sys.exit()
-
-
-def restart() -> None:
-    global sounder_dir
-    save_settings()
-    main_player_frame.destroy()
-    try:
-        os.chdir(sounder_dir)
-        os.system("start " + sys.argv[0])
-    except:
-        pass
-    sys.exit()
-
-
-def update() -> None:
+def close(action="close") -> None:
     global sounder_dir
     main_player_frame.destroy()
     save_settings()
-    try:
+    if action == "restart":
+        if os.path.isfile(sys.argv[0]):
+            os.system("start " + sys.argv[0])
+    elif action == "update":
         os.chdir(sounder_dir)
-        if os.path.isfile("Elevator.exe"):
-            os.system("start Elevator.exe")
-    except:
-        pass
+        if os.path.isfile("Updater.exe"):
+            os.system("start Updater.exe")
     sys.exit()
 
 
@@ -922,7 +901,7 @@ label_debug: ClassVar = ttk.Label(main_debug_screen, text="Debug Screen", font='
 panic_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="PANIC!",
                                     command=lambda: show(main_error_frame, "main_error_frame"))
 restart_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="RESTART"
-                                      , command=restart)
+                                      , command=lambda: close("restart"))
 main_init_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN INIT FRAME", cursor="hand2", takefocus=False
                                         , command=lambda: show(main_init_frame, "main_init_frame"))
 main_settings_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN SETTINGS FRAME", cursor="hand2",
@@ -970,7 +949,7 @@ error_info_two: ClassVar = ttk.Label(main_error_frame, background='#fff', foregr
                                      font='Bahnschrift 11', text="You can find Diagnostic information in the error log")
 
 error_button: ClassVar = ttk.Button(main_error_frame, cursor="hand2", takefocus=False, text="RESTART",
-                                    command=restart)
+                                    command=lambda: close("restart"))
 error_version_label: ClassVar = ttk.Label(main_error_frame, text="V" + version, font='Bahnschrift 11'
                                           , background='#fff', foreground='#000', border='6')
 error_img_label.place(relx=0.5, rely=0.15, anchor="n")
@@ -1061,9 +1040,9 @@ settings_frame_sixth.place(relx=0.005, rely=0.48, width=300, height=40)
 # seventh setting
 settings_frame_seventh: ClassVar = Frame(main_settings_frame)
 seventh_settings_update_label: ClassVar = ttk.Label(settings_frame_seventh, text="Check for updates",
-                                                font='Bahnschrift 11', style="W.TLabel")
+                                                    font='Bahnschrift 11', style="W.TLabel")
 seventh_settings_update_button: ClassVar = ttk.Button(settings_frame_seventh, cursor="hand2", takefocus=False,
-                                                  command=toggle_update)
+                                                      command=toggle_update)
 seventh_settings_update_label.pack(side=LEFT, padx=(0, 5))
 seventh_settings_update_button.pack(side=LEFT, padx=(3, 0))
 settings_frame_seventh.place(relx=0.005, rely=0.56, width=300, height=40)
