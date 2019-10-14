@@ -40,11 +40,10 @@ size: ClassVar = StringVar()
 
 
 def is_admin() -> bool:
-    return True
-    # try:
-    #     return ctypes.windll.shell32.IsUserAnAdmin()
-    # except:
-    #     return False
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
 
 
 def load_config() -> bool:
@@ -124,8 +123,10 @@ def main() -> None:
                 if download_update():
                     status.set("Done")
             else:
+                info_progress.stop()
                 status.set("No updates!")
         else:
+            info_progress.stop()
             status.set("Missing files!")
     else:
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 0)
