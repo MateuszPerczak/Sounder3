@@ -1,3 +1,5 @@
                            What's new?
 
-Some code optimizations!
++Added shuffle play.
++Changed the way how transparency works.
++Fixed changelog window.

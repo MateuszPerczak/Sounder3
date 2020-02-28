@@ -45,8 +45,18 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\*.json"; DestDir: "{app}"; Flags: ign
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.ico"; DestDir: "{app}"; Flags: ignoreversion 
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.dll"; DestDir: "{app}"; Flags: ignoreversion 
 ; Folders
-Source: "C:\Users\Mateusz\Desktop\Sounder3\Include\*"; DestDir: "{app}\Include\"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\Mateusz\Desktop\Sounder3\certifi\*"; DestDir: "{app}\certifi\"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\*"; DestDir: "{app}\lib2to3\"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\tests\data\*"; DestDir: "{app}\lib2to3\tests\data\"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\core\*"; DestDir: "{app}\numpy\core\"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\fft\*"; DestDir: "{app}\numpy\fft\"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\linalg\*"; DestDir: "{app}\numpy\linalg\"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\random\*"; DestDir: "{app}\numpy\random\"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\Include\*"; DestDir: "{app}\Include\"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "C:\Users\Mateusz\Desktop\Sounder3\certifi\*"; DestDir: "{app}\certifi\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\PIL\*"; DestDir: "{app}\PIL\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pygame\*"; DestDir: "{app}\pygame\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\tcl\*"; DestDir: "{app}\tcl\"; Flags: ignoreversion recursesubdirs createallsubdirs
