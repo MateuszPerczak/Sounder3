@@ -16,6 +16,7 @@ try:
 except ImportError:
     sys.exit(1)
 
+
 win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_HIDE)
 # dir
 sounder_dir: str = os.getcwd()

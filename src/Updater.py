@@ -99,6 +99,7 @@ def update() -> None:
                             bytes_downloaded += 8192
                             info_progress["value"] = bytes_downloaded
                             task.set(str(round(bytes_downloaded / 1000000, 1)) + "MB / " + str(file_size) + "MB")
+                    info_progress["value"] = 0
                     try:
                         task.set("")
                         status.set("Installing...")

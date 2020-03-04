@@ -1,5 +1,12 @@
-                           What's new?
-
-+Added shuffle play.
-+Changed the way how transparency works.
-+Fixed changelog window.
++Fixed shuffle play.
++Changed the way how the current directory is displayed.
++Fixed init function.
++Fixed console window that was showing up when restarting or updating.
++Changed the way how windows are displayed.
++Changed changelog window size and style.
++Removed unnecessary lines of code.
++Fixed baitrate label.
++Reduced buffer size.
++Changed the way how sounder is closing.
++Changed size of sliders.
++Added open logs button to the error screen.
