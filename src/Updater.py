@@ -79,6 +79,7 @@ def update() -> None:
     downloaded_zip: bytes = b''
     bytes_downloaded: float = 0
     file_size: float
+    upgrade: bool = False
     try:
         server_version = requests.get(
             "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text.strip()
@@ -100,17 +101,19 @@ def update() -> None:
                             info_progress["value"] = bytes_downloaded
                             task.set(str(round(bytes_downloaded / 1000000, 1)) + "MB / " + str(file_size) + "MB")
                     info_progress["value"] = 0
+                    info_progress.stop()
                     try:
                         task.set("")
                         status.set("Installing...")
-                        info_progress.stop()
                         info_progress.configure(mode="indeterminate")
                         info_progress.start(4)
                         with zipfile.ZipFile(io.BytesIO(downloaded_zip)) as zip_file:
                             for file in zip_file.namelist():
                                 if file == "Updater.exe":
                                     continue
-                                task.set("Updating:" + file)
+                                if file == "New-Updater.exe":
+                                    upgrade = True
+                                task.set("Replacing:" + file)
                                 try:
                                     zip_file.extract(file, sounder_dir)
                                 except Exception as error_obj:
@@ -118,7 +121,10 @@ def update() -> None:
                                     task.set("Skipping:" + file)
                         status.set("Done")
                         if os.path.isfile("Sounder3.exe"):
-                            os.system("start Sounder3.exe")
+                            os.popen("start Sounder3.exe", 'r')
+                        if upgrade:
+                            if os.path.isfile("New-Updater.exe"):
+                                os.popen("start New-Updater.exe upgrade", 'r')
                         close()
                     except Exception as error_obj:
                         logging.error(error_obj, exc_info=True)
@@ -158,10 +164,17 @@ def gui_setup() -> None:
 
 
 def main() -> None:
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "upgrade" and sys.argv[0] == "New-Updater.exe":
+            os.remove("Updater.exe")
+            os.rename("New-Updater.exe", "Updater.exe")
+        close()
     if is_admin():
         gui_setup()
         if load_config():
             update()
+        else:
+            status.set("Config file not found")
     else:
         close()
 

@@ -45,7 +45,7 @@ error_reason: ClassVar = StringVar()
 music_bitrate: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.4"
+version: str = "3.1.5"
 num_of_songs: int = 0
 songs: List = []
 current_song: int = 0
@@ -88,7 +88,7 @@ def load_settings() -> bool:
     global config, version, sounder_dir
     os.chdir(sounder_dir)
     config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
-              "gtr_buffer": False, "mode": "r_n",
+              "fst_buffer": False, "mode": "r_n",
               "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False, "debug": False,
               "update": True}
     if os.path.isfile('cfg.json'):
@@ -153,12 +153,22 @@ def refresh_window() -> None:
         left_player_music_list.see(current_song)
 
 
-def start_music() -> None:
+def init_music() -> bool:
     global config, songs, current_song
-    if bool(config["last_song"]) and config["continue"] and bool(songs):
-        if config["last_song"] in songs:
-            current_song = songs.index(config["last_song"])
-            music("play")
+    try:
+        if bool(songs):
+            if config["last_song"] in songs:
+                current_song = songs.index(config["last_song"])
+                if config["continue"]:
+                    music("play")
+                else:
+                    set_song_attrib()
+            else:
+                set_song_attrib()
+        return True
+    except Exception as e:
+        dump(e)
+        return False
 
 
 def refresh_dir() -> None:
@@ -191,10 +201,10 @@ def verify_settings() -> None:
     except:
         config["transition_duration"] = 1
     try:
-        if not type(config["gtr_buffer"]) is bool:
-            config["gtr_buffer"] = False
+        if not type(config["fst_buffer"]) is bool:
+            config["fst_buffer"] = False
     except:
-        config["gtr_buffer"] = False
+        config["fst_buffer"] = False
     try:
         if not type(config["last_song"]) is str:
             config["last_song"] = ""
@@ -303,7 +313,7 @@ def apply_theme() -> bool:
             top_player_folder_button.configure(image=folder_img)
             top_player_refresh_button.configure(image=refresh_img)
             third_settings_theme_button.configure(image=toggle_off_img)
-            if config["gtr_buffer"]:
+            if config["fst_buffer"]:
                 fourth_settings_buffer_button.configure(image=toggle_on_img)
             else:
                 fourth_settings_buffer_button.configure(image=toggle_off_img)
@@ -389,7 +399,7 @@ def apply_theme() -> bool:
             top_player_folder_button.configure(image=folder_img)
             top_player_refresh_button.configure(image=refresh_img)
             third_settings_theme_button.configure(image=toggle_on_img)
-            if config["gtr_buffer"]:
+            if config["fst_buffer"]:
                 fourth_settings_buffer_button.configure(image=toggle_on_img)
             else:
                 fourth_settings_buffer_button.configure(image=toggle_off_img)
@@ -428,7 +438,7 @@ def debug(char) -> None:
         show(main_debug_screen)
         debug_info.set("refresh_time: " + str(config["refresh_time"]) + "\ntheme: "
                        + str(config["theme"]) + "\nversion: " + str(config["version"]) + "\ntransition_duration: "
-                       + str(config["transition_duration"]) + "\ngtr_buffer: " + str(config["gtr_buffer"]) + "\nmode: "
+                       + str(config["transition_duration"]) + "\nfst_buffer: " + str(config["fst_buffer"]) + "\nmode: "
                        + str(config["mode"]) + "\ncontinue: " + str(config["continue"]) + "\nfade: "
                        + str(config["fade"]) + "\ndebug: " + str(config["debug"]) + "\nmusic_title: "
                        + str(music_title.get()) + "\nmusic_artist: " + str(music_artist.get())
@@ -461,10 +471,10 @@ def apply_settings() -> bool:
 def init_mixer() -> bool:
     global config
     try:
-        if config["gtr_buffer"]:
-            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=6144, devicename=None)
+        if config["fst_buffer"]:
+            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=2048, devicename=None)
         else:
-            mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=3072, devicename=None)
+            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=3072, devicename=None)
         mixer.init()
         mixer.music.set_volume(1)
     except Exception as e:
@@ -489,14 +499,11 @@ def init_player() -> None:
                 if apply_theme():
                     if init_mixer():
                         if load_music():
-                            if config["continue"]:
-                                start_music()
-                            else:
-                                set_song_attrib()
-                            refresh_window()
-                            show(main_player_frame)
-                            if config["update"]:
-                                check_for_update()
+                            if init_music():
+                                refresh_window()
+                                show(main_player_frame)
+                                if config["update"]:
+                                    check_for_update()
     except Exception as e:
         dump(e)
 
@@ -506,12 +513,15 @@ def music(mode) -> None:
     try:
         if bool(songs):
             if mode == "forward":
+                if config["mode"] == "s_p":
+                    music("shuffle")
                 if not current_song >= num_of_songs:
                     current_song += 1
                     if mixer.music.get_busy():
                         mixer.music.stop()
                     mixer.music.load(songs[current_song])
                     mixer.music.play()
+                    set_song_attrib()
                     if not play_button_state:
                         play_button_state = True
                         buttons_player_play_button.configure(image=pause_img)
@@ -520,6 +530,7 @@ def music(mode) -> None:
                     if not mixer.music.get_busy():
                         mixer.music.load(songs[current_song])
                         mixer.music.play()
+                        set_song_attrib()
                     else:
                         mixer.music.unpause()
                     play_button_state = True
@@ -548,6 +559,7 @@ def music(mode) -> None:
                 current_song = left_player_music_list.curselection()[0]
                 mixer.music.load(songs[current_song])
                 mixer.music.play()
+                set_song_attrib()
             elif mode == "shuffle":
                 if num_of_songs > 0:
                     new_song = songs.index(choice(songs))
@@ -559,10 +571,10 @@ def music(mode) -> None:
                             mixer.music.stop()
                         mixer.music.load(songs[current_song])
                         mixer.music.play()
+                        set_song_attrib()
                         if not play_button_state:
                             play_button_state = True
                             buttons_player_play_button.configure(image=pause_img)
-            set_song_attrib()
             left_player_music_list.see(current_song)
         elif mode == "play":
             if play_button_state:
@@ -835,12 +847,12 @@ def toggle_theme() -> None:
 def toggle_buffer() -> None:
     global config
     try:
-        if config["gtr_buffer"]:
+        if config["fst_buffer"]:
             fourth_settings_buffer_button.configure(image=toggle_off_img)
-            config["gtr_buffer"] = False
+            config["fst_buffer"] = False
         else:
             fourth_settings_buffer_button.configure(image=toggle_on_img)
-            config["gtr_buffer"] = True
+            config["fst_buffer"] = True
     except Exception as e:
         dump(e)
 
@@ -1047,7 +1059,7 @@ settings_frame_third.place(relx=0.005, rely=0.24, width=300, height=40)
 # end
 # fourth setting
 settings_frame_fourth: ClassVar = Frame(main_settings_frame)
-fourth_settings_buffer_label: ClassVar = ttk.Label(settings_frame_fourth, text="Use double buffer"
+fourth_settings_buffer_label: ClassVar = ttk.Label(settings_frame_fourth, text="Use faster buffer"
                                                    , font='Bahnschrift 11', style="W.TLabel")
 fourth_settings_buffer_button: ClassVar = ttk.Button(settings_frame_fourth, cursor="hand2", takefocus=False
                                                      , command=toggle_buffer)
