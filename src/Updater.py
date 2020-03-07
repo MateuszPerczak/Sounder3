@@ -79,7 +79,6 @@ def update() -> None:
     downloaded_zip: bytes = b''
     bytes_downloaded: float = 0
     file_size: float
-    upgrade: bool = False
     try:
         server_version = requests.get(
             "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text.strip()
@@ -100,8 +99,10 @@ def update() -> None:
                             bytes_downloaded += 8192
                             info_progress["value"] = bytes_downloaded
                             task.set(str(round(bytes_downloaded / 1000000, 1)) + "MB / " + str(file_size) + "MB")
-                    info_progress["value"] = 0
                     info_progress.stop()
+                    info_progress["maximum"] = 100
+                    info_progress["value"] = 0
+
                     try:
                         task.set("")
                         status.set("Installing...")
@@ -111,36 +112,44 @@ def update() -> None:
                             for file in zip_file.namelist():
                                 if file == "Updater.exe":
                                     continue
-                                if file == "New-Updater.exe":
-                                    upgrade = True
                                 task.set("Replacing:" + file)
                                 try:
                                     zip_file.extract(file, sounder_dir)
                                 except Exception as error_obj:
                                     logging.error(error_obj, exc_info=True)
                                     task.set("Skipping:" + file)
+                        info_progress.configure(mode="determinate")
+                        info_progress["maximum"] = 100
+                        info_progress["value"] = 0
                         status.set("Done")
                         if os.path.isfile("Sounder3.exe"):
                             os.popen("start Sounder3.exe", 'r')
-                        if upgrade:
-                            if os.path.isfile("New-Updater.exe"):
-                                os.popen("start New-Updater.exe upgrade", 'r')
                         close()
                     except Exception as error_obj:
                         logging.error(error_obj, exc_info=True)
                         info_progress.stop()
                         info_progress.configure(mode="determinate")
+                        info_progress["maximum"] = 100
+                        info_progress["value"] = 0
                         status.set("Failed to extract content!")
                 else:
                     info_progress.stop()
                     info_progress.configure(mode="determinate")
+                    info_progress["maximum"] = 100
+                    info_progress["value"] = 0
                     status.set("Failed to download updates!")
             except Exception as error_obj:
+                info_progress.stop()
+                info_progress.configure(mode="determinate")
+                info_progress["maximum"] = 100
+                info_progress["value"] = 0
                 status.set("An error occurred while updating!")
                 logging.error(error_obj, exc_info=True)
         else:
             info_progress.stop()
             info_progress.configure(mode="determinate")
+            info_progress["maximum"] = 100
+            info_progress["value"] = 0
             status.set("No updates")
     except Exception as error_obj:
         logging.error(error_obj, exc_info=True)
@@ -164,11 +173,6 @@ def gui_setup() -> None:
 
 
 def main() -> None:
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "upgrade" and sys.argv[0] == "New-Updater.exe":
-            os.remove("Updater.exe")
-            os.rename("New-Updater.exe", "Updater.exe")
-        close()
     if is_admin():
         gui_setup()
         if load_config():

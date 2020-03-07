@@ -2,4 +2,3 @@
 +Changed the buffer setting.
 +Added init_music function.
 +Added shuffle play to the forward button.
-+Prepared updater for self-update.

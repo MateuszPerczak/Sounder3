@@ -49,10 +49,10 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\*.dll"; DestDir: "{app}"; Flags: igno
 
 ; Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\*"; DestDir: "{app}\lib2to3\"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Source: "C:\Users\Mateusz\Desktop\Sounder3\lib2to3\tests\data\*"; DestDir: "{app}\lib2to3\tests\data\"; Flags: ignoreversion recursesubdirs createallsubdirs
-;Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\core\*"; DestDir: "{app}\numpy\core\"; Flags: ignoreversion recursesubdirs createallsubdirs
-;Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\fft\*"; DestDir: "{app}\numpy\fft\"; Flags: ignoreversion recursesubdirs createallsubdirs
-;Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\linalg\*"; DestDir: "{app}\numpy\linalg\"; Flags: ignoreversion recursesubdirs createallsubdirs
-;Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\random\*"; DestDir: "{app}\numpy\random\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\core\*"; DestDir: "{app}\numpy\core\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\fft\*"; DestDir: "{app}\numpy\fft\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\linalg\*"; DestDir: "{app}\numpy\linalg\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\random\*"; DestDir: "{app}\numpy\random\"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 
 ; Source: "C:\Users\Mateusz\Desktop\Sounder3\Include\*"; DestDir: "{app}\Include\"; Flags: ignoreversion recursesubdirs createallsubdirs
