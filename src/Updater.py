@@ -1,5 +1,6 @@
 try:
     import os
+    import sys
     import threading
     import json
     from tkinter import *
@@ -72,6 +73,14 @@ def close() -> None:
     sys.exit(0)
 
 
+def open_sounder():
+    try:
+        if os.path.isfile("Sounder3.exe"):
+            os.startfile("Sounder3.exe")
+    except Exception as error_obj:
+        logging.error(error_obj, exc_info=True)
+
+
 def update() -> None:
     status.set("Checking...")
     info_progress.start(4)
@@ -102,7 +111,6 @@ def update() -> None:
                     info_progress.stop()
                     info_progress["maximum"] = 100
                     info_progress["value"] = 0
-
                     try:
                         task.set("")
                         status.set("Installing...")
@@ -118,13 +126,11 @@ def update() -> None:
                                 except Exception as error_obj:
                                     logging.error(error_obj, exc_info=True)
                                     task.set("Skipping:" + file)
+                        info_progress.stop()
                         info_progress.configure(mode="determinate")
                         info_progress["maximum"] = 100
                         info_progress["value"] = 0
                         status.set("Done")
-                        if os.path.isfile("Sounder3.exe"):
-                            os.popen("start Sounder3.exe", 'r')
-                        close()
                     except Exception as error_obj:
                         logging.error(error_obj, exc_info=True)
                         info_progress.stop()
@@ -177,6 +183,8 @@ def main() -> None:
         gui_setup()
         if load_config():
             update()
+            open_sounder()
+            close()
         else:
             status.set("Config file not found")
     else:

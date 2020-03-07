@@ -791,7 +791,7 @@ def close(action: str = "close") -> None:
     elif action == "update":
         os.chdir(sounder_dir)
         if os.path.isfile("Updater.exe"):
-            os.popen("start Updater.exe", 'r')
+            os.startfile("Updater.exe")
     logging.shutdown()
     sys.exit()
 
@@ -804,7 +804,7 @@ def open_logs() -> None:
             logging.shutdown()
         os.chdir(sounder_dir)
         if os.path.isfile("errors.log"):
-            os.popen("start errors.log", 'r')
+            os.startfile("errors.log")
     except:
         pass
 
