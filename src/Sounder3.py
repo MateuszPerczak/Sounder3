@@ -546,6 +546,7 @@ def music(mode) -> None:
                         mixer.music.stop()
                     mixer.music.load(songs[current_song])
                     mixer.music.play()
+                    set_song_attrib()
                     if not play_button_state:
                         play_button_state = True
                         buttons_player_play_button.configure(image=pause_img)
