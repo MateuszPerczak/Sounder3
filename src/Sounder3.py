@@ -504,7 +504,7 @@ def init_player() -> None:
                                 refresh_window()
                                 show(main_player_frame)
                                 if config["update"]:
-                                    check_for_update()
+                                    main_window.after(10, check_for_update)
     except Exception as e:
         dump(e)
 
@@ -788,8 +788,8 @@ def check_for_update() -> None:
                     new_version_label.configure(background="#000", foreground="#fff")
                 update_window.deiconify()
                 update_window.mainloop()
-        except:
-            pass
+        except Exception as e:
+            dump(e)
 
 
 def close(action: str = "close") -> None:
@@ -1204,9 +1204,7 @@ bottom_player_frame.place(relx=0.5, rely=0.09, anchor="n", relwidth=1, height=46
 # end
 # main
 show(main_init_frame)
-init_thread = Thread(target=init_player, )
-init_thread.daemon = True
-init_thread.start()
+init_thread = Thread(target=init_player, daemon=True).start()
 # end
 left_player_music_list.bind("<<ListboxSelect>>", list_box_play)
 main_window.protocol("WM_DELETE_WINDOW", close)

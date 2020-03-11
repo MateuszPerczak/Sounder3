@@ -14,8 +14,8 @@ except ImportError:
     sys.exit(1)
 
 # dir
-# sounder_dir: str = getcwd()
-sounder_dir: str = path.dirname(sys.executable)
+sounder_dir: str = getcwd()
+# sounder_dir: str = path.dirname(sys.executable)
 # log
 logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
 # window setup
@@ -150,6 +150,7 @@ def check_updates() -> bool:
         else:
             return False
     except Exception as e:
+        print("ERROR")
         dump(e)
 
 

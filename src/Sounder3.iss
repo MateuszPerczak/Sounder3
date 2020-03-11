@@ -57,7 +57,7 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\numpy\random\*"; DestDir: "{app}\nump
 
 
 ; Source: "C:\Users\Mateusz\Desktop\Sounder3\Include\*"; DestDir: "{app}\Include\"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Source: "C:\Users\Mateusz\Desktop\Sounder3\certifi\*"; DestDir: "{app}\certifi\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\Mateusz\Desktop\Sounder3\certifi\*"; DestDir: "{app}\certifi\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\PIL\*"; DestDir: "{app}\PIL\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\pygame\*"; DestDir: "{app}\pygame\"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\Mateusz\Desktop\Sounder3\tcl\*"; DestDir: "{app}\tcl\"; Flags: ignoreversion recursesubdirs createallsubdirs

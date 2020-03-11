@@ -6,4 +6,5 @@
 ~Changed the update function.
 ~Changed the debug menu.
 +Added animation for changing the theme.
+~Fixed update window not showing up.
 
