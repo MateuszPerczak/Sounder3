@@ -1,10 +1,10 @@
 try:
     import os
-    import time
-    import threading
+    from time import sleep
+    from threading import Thread
     import json
     import logging
-    import requests
+    from requests import get
     from tkinter import *
     from tkinter import ttk
     from tkinter.filedialog import askdirectory
@@ -15,7 +15,7 @@ try:
     from mutagen.id3 import ID3
     from mutagen.mp3 import MP3
     from typing import ClassVar, Dict, List
-    from random import choice
+    from random import shuffle, choice, sample
 except ImportError:
     sys.exit(1)
 
@@ -45,10 +45,11 @@ error_reason: ClassVar = StringVar()
 music_bitrate: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.5"
-num_of_songs: int = 0
+version: str = "3.1.6"
+played_songs: List = []
 songs: List = []
 current_song: int = 0
+random_list: List = []
 play_button_state: bool = False
 default_album_img: ClassVar
 repeat_all_img: ClassVar
@@ -91,7 +92,8 @@ def load_settings() -> bool:
               "fst_buffer": False, "mode": "r_n",
               "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False, "debug": False,
               "update": True}
-    if os.path.isfile('cfg.json'):
+
+    if os.path.isfile("cfg.json"):
         try:
             with open('cfg.json', 'r') as data:
                 config = json.load(data)
@@ -118,15 +120,16 @@ def save_settings() -> bool:
 
 
 def load_music() -> bool:
-    global config, num_of_songs, songs
-    num_of_songs = -1
+    global config, songs, random_list, played_songs
     songs = []
+    played_songs = []
     try:
         os.chdir(config["path"])
         for file in os.listdir(config["path"]):
             if file.endswith(".xm") or file.endswith(".mp3") or file.endswith(".wav") or file.endswith(".ogg"):
-                num_of_songs += 1
                 songs.append(file)
+        random_list = list(range(0, len(songs)))
+        shuffle(random_list)
     except:
         return False
     return True
@@ -160,7 +163,7 @@ def init_music() -> bool:
             if config["last_song"] in songs:
                 current_song = songs.index(config["last_song"])
                 if config["continue"]:
-                    music("play")
+                    play()
                 else:
                     set_song_attrib()
             else:
@@ -433,19 +436,17 @@ def apply_theme() -> bool:
 
 
 def debug(char) -> None:
-    global config
+    global config, play_button_state, songs, played_songs
     if char.keysym == "F12":
         show(main_debug_screen)
-        debug_info.set("refresh_time: " + str(config["refresh_time"]) + "\ntheme: "
-                       + str(config["theme"]) + "\nversion: " + str(config["version"]) + "\ntransition_duration: "
-                       + str(config["transition_duration"]) + "\nfst_buffer: " + str(config["fst_buffer"]) + "\nmode: "
-                       + str(config["mode"]) + "\ncontinue: " + str(config["continue"]) + "\nfade: "
-                       + str(config["fade"]) + "\ndebug: " + str(config["debug"]) + "\nmusic_title: "
-                       + str(music_title.get()) + "\nmusic_artist: " + str(music_artist.get())
-                       + "\nmusic_position: " + str(music_position.get()) + "\nmusic_total: "
-                       + str(music_total.get()) + "\nalbum_name: " + str(album_name.get()) + "\nnum_of_songs: "
-                       + str(num_of_songs) + "\ncurrent_song: " + str(current_song) + "\nplay_button_state: "
-                       + str(play_button_state))
+        debug_info.set(f"refresh_time: {config['refresh_time']} theme: {config['theme']}"
+                       f"version: {config['version']} transition_duration: {config['transition_duration']} "
+                       f"fst_buffer: {config['fst_buffer']} mode: {config['mode']} continue: {config['continue']} "
+                       f"fade: {config['fade']} debug: {config['debug']} music_title: {music_title.get()} "
+                       f"music_artist: {music_artist.get()} music_position: {music_position.get()} "
+                       f"music_total: {music_total.get()} album_name: {album_name.get()} num_of_songs: {len(songs)} "
+                       f"current_song: {current_song} play_button_state: {play_button_state}\n"
+                       f"played_songs: {played_songs}\nsongs: {songs}")
 
 
 def apply_settings() -> bool:
@@ -481,7 +482,7 @@ def init_mixer() -> bool:
         dump(e)
         return False
     try:
-        status_thread = threading.Thread(target=song_stats, )
+        status_thread = Thread(target=song_stats, )
         status_thread.daemon = True
         status_thread.start()
     except Exception as e:
@@ -508,80 +509,97 @@ def init_player() -> None:
         dump(e)
 
 
-def music(mode) -> None:
-    global num_of_songs, songs, current_song, play_button_state
+def forward() -> None:
+    global songs, play_button_state, current_song, config, random_list, played_songs
     try:
         if bool(songs):
-            if mode == "forward":
-                if config["mode"] == "s_p":
-                    music("shuffle")
-                if not current_song >= num_of_songs:
-                    current_song += 1
-                    if mixer.music.get_busy():
-                        mixer.music.stop()
-                    mixer.music.load(songs[current_song])
-                    mixer.music.play()
-                    set_song_attrib()
-                    if not play_button_state:
-                        play_button_state = True
-                        buttons_player_play_button.configure(image=pause_img)
-            elif mode == "play":
-                if not play_button_state:
-                    if not mixer.music.get_busy():
-                        mixer.music.load(songs[current_song])
-                        mixer.music.play()
-                        set_song_attrib()
-                    else:
-                        mixer.music.unpause()
-                    play_button_state = True
-                    buttons_player_play_button.configure(image=pause_img)
-                elif play_button_state:
-                    mixer.music.pause()
-                    play_button_state = False
-                    buttons_player_play_button.configure(image=play_img)
-            elif mode == "previous":
-                if not current_song <= 0:
-                    current_song -= 1
-                    if mixer.music.get_busy():
-                        mixer.music.stop()
-                    mixer.music.load(songs[current_song])
-                    mixer.music.play()
-                    set_song_attrib()
-                    if not play_button_state:
-                        play_button_state = True
-                        buttons_player_play_button.configure(image=pause_img)
-            elif mode == "list":
-                if play_button_state:
-                    if mixer.music.get_busy():
-                        mixer.music.stop()
-                elif not play_button_state:
-                    play_button_state = True
-                    buttons_player_play_button.configure(image=pause_img)
-                current_song = left_player_music_list.curselection()[0]
+            if config["mode"] == "s_p" and (len(songs)) > 2:
+                current_song = choice(sample(random_list, k=int(len(songs) / 2)))
+                while current_song in played_songs:
+                    if len(played_songs) == len(songs):
+                        played_songs = []
+                    current_song = choice(sample(random_list, k=int(len(songs) / 2)))
+                played_songs.append(current_song)
+            elif not current_song >= len(songs) - 1:
+                current_song += 1
+            if mixer.music.get_busy():
+                mixer.music.stop()
+            mixer.music.load(songs[current_song])
+            mixer.music.play()
+            set_song_attrib()
+            if not play_button_state:
+                play_button_state = True
+                buttons_player_play_button.configure(image=pause_img)
+            left_player_music_list.see(current_song)
+    except:
+        refresh_dir()
+
+
+def previous() -> None:
+    global songs, play_button_state, current_song, played_songs
+    try:
+        if bool(songs):
+            if config["mode"] == "s_p" and (len(songs)) > 2 and bool(played_songs):
+                if len(played_songs) > 1:
+                    current_song = played_songs[-2]
+                elif len(played_songs) == 1:
+                    current_song = played_songs[-1]
+                played_songs.remove(current_song)
+            elif not current_song <= 0:
+                current_song -= 1
+            if mixer.music.get_busy():
+                mixer.music.stop()
+            mixer.music.load(songs[current_song])
+            mixer.music.play()
+            set_song_attrib()
+            if not play_button_state:
+                play_button_state = True
+                buttons_player_play_button.configure(image=pause_img)
+            left_player_music_list.see(current_song)
+    except:
+        refresh_dir()
+
+
+def list_box_play(event=None) -> None:
+    global songs, play_button_state, current_song
+    try:
+        if bool(songs):
+            if play_button_state:
+                if mixer.music.get_busy():
+                    mixer.music.stop()
+            elif not play_button_state:
+                play_button_state = True
+                buttons_player_play_button.configure(image=pause_img)
+            current_song = left_player_music_list.curselection()[0]
+            mixer.music.load(songs[current_song])
+            mixer.music.play()
+            set_song_attrib()
+    except:
+        refresh_dir()
+
+
+def play() -> None:
+    global songs, play_button_state, current_song
+    try:
+        if bool(songs):
+            if play_button_state and mixer.music.get_busy():
+                play_button_state = False
+                mixer.music.pause()
+                buttons_player_play_button.configure(image=play_img)
+            elif not play_button_state and not mixer.music.get_busy():
+                play_button_state = True
                 mixer.music.load(songs[current_song])
                 mixer.music.play()
                 set_song_attrib()
-            elif mode == "shuffle":
-                if num_of_songs > 0:
-                    new_song = songs.index(choice(songs))
-                    if current_song == new_song:
-                        music("shuffle")
-                    else:
-                        current_song = new_song
-                        if mixer.music.get_busy():
-                            mixer.music.stop()
-                        mixer.music.load(songs[current_song])
-                        mixer.music.play()
-                        set_song_attrib()
-                        if not play_button_state:
-                            play_button_state = True
-                            buttons_player_play_button.configure(image=pause_img)
-            left_player_music_list.see(current_song)
-        elif mode == "play":
-            if play_button_state:
-                mixer.music.stop()
-                play_button_state = False
-                buttons_player_play_button.configure(image=play_img)
+                buttons_player_play_button.configure(image=pause_img)
+            elif not play_button_state and mixer.music.get_busy():
+                play_button_state = True
+                mixer.music.unpause()
+                buttons_player_play_button.configure(image=pause_img)
+        elif not bool(songs) and play_button_state:
+            play_button_state = False
+            mixer.music.stop()
+            buttons_player_play_button.configure(image=play_img)
     except:
         refresh_dir()
 
@@ -604,7 +622,7 @@ def set_song_attrib() -> None:
                 except:
                     album_name.set("")
                 try:
-                    music_bitrate.set(str(int(tags.info.bitrate / 1000)))
+                    music_bitrate.set(f"{int(tags.info.bitrate / 1000)}")
                 except:
                     music_bitrate.set("---")
                 try:
@@ -615,7 +633,7 @@ def set_song_attrib() -> None:
                     right_player_album_art_label.configure(image=default_album_img)
                 try:
                     right_player_title_label.configure(font='Bahnschrift 11')
-                    music_title.set(str(tags["TIT2"]))
+                    music_title.set(f"{tags['TIT2']}")
                 except:
                     if len(songs[current_song]) > 50:
                         right_player_title_label.configure(font='Bahnschrift 9')
@@ -657,55 +675,49 @@ def set_song_attrib() -> None:
 
 def song_stats() -> None:
     global play_button_state, config
-    song_length: float
+    loop: bool = False
     try:
-        end = False
-        wait = False
         while True:
-            if mixer.music.get_busy():
-                # time smoothing
-                if play_button_state and wait:
-                    time.sleep(0.2)
-                    wait = False
-                elif play_button_state and not wait:
-                    song_length = mixer.music.get_pos() / 1000
-                    bottom_player_progress_bar["value"] = song_length
-                    time_minutes, time_seconds = divmod(song_length, 60)
-                    music_position.set(str(int(time_minutes)) + ":" + str(int(time_seconds)).zfill(2))
-                elif not play_button_state and not wait:
-                    wait = True
-                # end
-                if not end:
-                    end = True
-                time.sleep(float(config["refresh_time"] * 0.2))
-            elif not mixer.music.get_busy():
-                if end:
-                    play_button_state = False
-                    buttons_player_play_button.configure(image=play_img)
-                    end = False
-                    if config["transition_duration"] != 0:
-                        time.sleep(config["transition_duration"])
-                    if not mixer.music.get_busy():
-                        play_loop()
-                time.sleep(float(config["refresh_time"] * 0.5))
+            if mixer.music.get_busy() and play_button_state:
+                bottom_player_progress_bar["value"] = mixer.music.get_pos() / 1000
+                music_position.set(str(int(divmod((mixer.music.get_pos() / 1000), 60)[0]))
+                                   + ":" + str(int(divmod((mixer.music.get_pos() / 1000), 60)[1])).zfill(2))
+                sleep(float(config["refresh_time"] * 0.3))
+            elif not mixer.music.get_busy() and play_button_state:
+                play_button_state = False
+                loop = True
+                buttons_player_play_button.configure(image=play_img)
+                if config["transition_duration"] != 0:
+                    bottom_player_progress_bar["maximum"] = config["transition_duration"]
+                    bottom_player_progress_bar["value"] = 0
+                    music_total.set(f"{int(config['transition_duration'])}s")
+                    for time in range(int(config["transition_duration"] * 10)):
+                        if mixer.music.get_busy():
+                            break
+                        bottom_player_progress_bar["value"] = time / 10
+                        music_position.set(f"{time / 10}s")
+                        sleep(0.1)
+            elif loop and not mixer.music.get_busy() and not play_button_state:
+                loop = False
+                play_loop()
+            else:
+                sleep(float(config["refresh_time"] * 0.6))
     except Exception as e:
         dump(e)
 
 
 def play_loop() -> None:
-    global config, current_song, num_of_songs
-    if config["mode"] == "r_n":
-        music("forward")
-    elif config["mode"] == "s_p":
-        music("shuffle")
+    global config, current_song
+    if config["mode"] == "r_n" or config["mode"] == "s_p":
+        forward()
     elif config["mode"] == "r_o":
-        music("play")
+        play()
     elif config["mode"] == "r_a":
-        if current_song < num_of_songs:
-            music("forward")
+        if current_song < (len(songs) - 1):
+            forward()
         else:
             current_song = 0
-            music("play")
+            play()
 
 
 def mode_change() -> None:
@@ -737,7 +749,7 @@ def check_for_update() -> None:
     global version, sounder_dir
     if os.path.isfile(sounder_dir + "\\Updater.exe"):
         try:
-            server_version = requests.get(
+            server_version = get(
                 "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text.strip()
             if int(version.replace(".", "")) < int(server_version.replace(".", "")):
                 update_window: ClassVar = Toplevel()
@@ -788,7 +800,7 @@ def close(action: str = "close") -> None:
     save_settings()
     if action == "restart":
         if os.path.isfile(sys.argv[0]):
-            os.popen("start " + sys.argv[0], 'r')
+            os.startfile(sys.argv[0])
     elif action == "update":
         os.chdir(sounder_dir)
         if os.path.isfile("Updater.exe"):
@@ -818,10 +830,6 @@ def change_dir_btn() -> None:
         pass
 
 
-def list_box_selector(event=None) -> None:
-    music("list")
-
-
 def set_refresh(value) -> None:
     global config
     config["refresh_time"] = round(float(value), 1)
@@ -835,12 +843,16 @@ def set_duration(value) -> None:
 def toggle_theme() -> None:
     global config
     try:
+        show(main_init_frame)
+        main_init_frame.update()
+        sleep(0.25)
         if config["theme"] == "light":
             config["theme"] = "dark"
         elif config["theme"] == "dark":
             config["theme"] = "light"
         if apply_theme():
             set_song_attrib()
+        show(main_settings_frame)
     except Exception as e:
         dump(e)
 
@@ -928,8 +940,7 @@ def changelog():
             for line in text.readlines():
                 changelog_text.insert(END, line)
         changelog_text.configure(state=DISABLED)
-    changelog_text.insert(END, "[File not found!]\n"
-                               "Never gonna tell a lie and hurt you")
+    changelog_text.insert(END, "[File not found!]")
     try:
         os.chdir(config["path"].rstrip('\n'))
     except Exception as e:
@@ -942,9 +953,9 @@ def changelog():
 # frames
 # debug screen
 main_debug_screen: ClassVar = Frame(main_window)
-main_debug_screen.configure(background="#fff")
-label_debug: ClassVar = ttk.Label(main_debug_screen, text="Debug Screen", font='Bahnschrift 14', background='#fff',
-                                  foreground='#000', border='0', anchor="center")
+main_debug_screen.configure(background="#000")
+label_debug: ClassVar = ttk.Label(main_debug_screen, text="Debug Screen", font='Bahnschrift 24', background='#000',
+                                  foreground='#fff', border='0', anchor="center")
 panic_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="PANIC",
                                     command=lambda: show(main_error_frame))
 restart_button: ClassVar = ttk.Button(main_debug_screen, cursor="hand2", takefocus=False, text="RESTART"
@@ -961,16 +972,16 @@ main_player_button: ClassVar = ttk.Button(main_debug_screen, text="SHOW MAIN PLA
 check_for_update_button: ClassVar = ttk.Button(main_debug_screen, text="CHECK FOR UPDATES", cursor="hand2"
                                                , takefocus=False,
                                                command=check_for_update)
-info_label: ClassVar = ttk.Label(main_debug_screen, textvariable=debug_info, font='Consolas 9', background='#fff',
-                                 foreground='#000', border='0', anchor="w", wraplength=260)
-label_debug.place(relx=0.5, rely=0, relwidth=1, relheight=0.1, anchor="n")
-panic_button.place(relx=0.5, rely=0.2, relheight=0.08, relwidth=0.3, anchor="n")
-restart_button.place(relx=0.5, rely=0.3, relheight=0.08, relwidth=0.3, anchor="n")
-main_init_button.place(relx=0.5, rely=0.4, relheight=0.08, relwidth=0.3, anchor="n")
-main_settings_button.place(relx=0.5, rely=0.5, relheight=0.08, relwidth=0.3, anchor="n")
-main_player_button.place(relx=0.5, rely=0.6, relheight=0.08, relwidth=0.3, anchor="n")
-check_for_update_button.place(relx=0.5, rely=0.7, relheight=0.08, relwidth=0.3, anchor="n")
-info_label.place(relx=0.005, rely=0.2)
+info_label: ClassVar = ttk.Label(main_debug_screen, textvariable=debug_info, font='Consolas 8', background='#000',
+                                 foreground='#fff', border='0', anchor="n", wraplength=800)
+label_debug.place(relx=0.5, rely=0, relwidth=1, relheight=0.15, anchor="n")
+panic_button.place(relx=0.7, rely=0.2, relheight=0.08, relwidth=0.3, anchor="n")
+restart_button.place(relx=0.7, rely=0.3, relheight=0.08, relwidth=0.3, anchor="n")
+main_init_button.place(relx=0.3, rely=0.2, relheight=0.08, relwidth=0.3, anchor="n")
+main_settings_button.place(relx=0.3, rely=0.4, relheight=0.08, relwidth=0.3, anchor="n")
+main_player_button.place(relx=0.3, rely=0.3, relheight=0.08, relwidth=0.3, anchor="n")
+check_for_update_button.place(relx=0.7, rely=0.4, relheight=0.08, relwidth=0.3, anchor="n")
+info_label.place(relx=0.005, rely=0.55, relheight=0.44, relwidth=0.99)
 main_debug_screen.place(relx=0.5, rely=0, anchor="n", width=806, height=500)
 # end
 # main init frame
@@ -978,8 +989,8 @@ main_init_frame: ClassVar = Frame(main_window)
 main_init_frame.configure(background="#fff")
 logo_label: ClassVar = ttk.Label(main_init_frame, image=logo_1_img, font='Bahnschrift 11', background='#fff'
                                  , foreground='#000', border='0')
-version_label: ClassVar = ttk.Label(main_init_frame, text="V" + version[0], font='Bahnschrift 11', background='#fff'
-                                    , foreground='#000', border='0')
+version_label: ClassVar = ttk.Label(main_init_frame, text="V" + version, font='Bahnschrift 11', background='#fff'
+                                    , foreground='#000', border='0', anchor=CENTER)
 logo_label.place(relx=0.5, rely=0.35, anchor="n")
 version_label.place(relx=0.5, rely=0.52, anchor="n")
 main_init_frame.place(relx=0.5, rely=0, anchor="n", width=806, height=500)
@@ -995,7 +1006,7 @@ error_reason_label: ClassVar = ttk.Label(main_error_frame, textvariable=error_re
                                          , foreground='#000', border='0', font='Bahnschrift 13', wraplength=700
                                          , justify='center')
 error_info_one: ClassVar = ttk.Label(main_error_frame, background='#fff', foreground='#000', border='0',
-                                     font='Bahnschrift 11', text="The application unexpectedly exited!")
+                                     font='Bahnschrift 11', text="The application unexpectedly crashed!")
 error_info_two: ClassVar = ttk.Label(main_error_frame, background='#fff', foreground='#000', border='0',
                                      font='Bahnschrift 11', text="You can find Diagnostic information in the error log")
 
@@ -1163,11 +1174,11 @@ right_player_frame.place(relx=0.5, rely=0, width=403, relheight=1)
 # buttons_frame
 buttons_player_frame: ClassVar = Frame(right_player_frame)
 buttons_player_previous_button: ClassVar = ttk.Button(buttons_player_frame, cursor="hand2", takefocus=False,
-                                                      command=lambda: music("previous"))
+                                                      command=previous)
 buttons_player_play_button: ClassVar = ttk.Button(buttons_player_frame, cursor="hand2", takefocus=False,
-                                                  command=lambda: music("play"))
+                                                  command=play)
 buttons_player_forward_button: ClassVar = ttk.Button(buttons_player_frame, cursor="hand2", takefocus=False,
-                                                     command=lambda: music("forward"))
+                                                     command=forward)
 mode_player_mode_button: ClassVar = ttk.Button(buttons_player_frame, cursor="hand2", takefocus=False,
                                                command=mode_change)
 buttons_player_previous_button.place(relx=0.03, rely=0)
@@ -1193,11 +1204,11 @@ bottom_player_frame.place(relx=0.5, rely=0.09, anchor="n", relwidth=1, height=46
 # end
 # main
 show(main_init_frame)
-init_thread = threading.Thread(target=init_player, )
+init_thread = Thread(target=init_player, )
 init_thread.daemon = True
 init_thread.start()
 # end
-left_player_music_list.bind("<<ListboxSelect>>", list_box_selector)
+left_player_music_list.bind("<<ListboxSelect>>", list_box_play)
 main_window.protocol("WM_DELETE_WINDOW", close)
 main_window.deiconify()
 main_window.mainloop()

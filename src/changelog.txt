@@ -1,4 +1,9 @@
-~Fixed song progress time.
-+Changed the buffer setting.
-+Added init_music function.
-+Added shuffle play to the forward button.
++Added new updater
++Some code optimizations.
+~Changed the way how shuffle play works.
++Added transition timer.
++Added history of shuffle play that can be accessed with the back button when shuffle play is selected.
+~Changed the update function.
+~Changed the debug menu.
++Added animation for changing the theme.
+
