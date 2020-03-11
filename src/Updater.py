@@ -14,8 +14,8 @@ except ImportError:
     sys.exit(1)
 
 # dir
-sounder_dir: str = getcwd()
-# sounder_dir: str = path.dirname(sys.executable)
+# sounder_dir: str = getcwd()
+sounder_dir: str = path.dirname(sys.executable)
 # log
 logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
 # window setup
@@ -105,7 +105,7 @@ def update() -> bool:
     show(checking_frame)
     try:
         bytes_downloaded: float = 0
-        server_zip = get("https://github.com/losek1/Sounder3/releases/download/v" + str(server_version) + "/package.zip"
+        server_zip = get(f"https://github.com/losek1/Sounder3/releases/download/v{server_version}/package.zip"
                          , stream=True)
         if server_zip.status_code == 200:
             update_progress["maximum"] = int(server_zip.headers.get('Content-Length'))
@@ -115,14 +115,12 @@ def update() -> bool:
                     package += chunk
                     bytes_downloaded += chunk_size
                     update_progress["value"] = bytes_downloaded
-                    update_data.configure(text="{}MB / {}MB".format(str(round(bytes_downloaded / 1000000, 1)), str(
-                        round(int(server_zip.headers.get('Content-Length')) / 1000000, 1))))
+                    update_data.configure(text=f"{round(bytes_downloaded / 1000000, 1)}MB / {round(int(server_zip.headers.get('Content-Length')) / 1000000, 1)}MB")
             change_mode("indeterminate")
             update_label.configure(text="Installing updates ...")
             with zipfile.ZipFile(BytesIO(package)) as zip_file:
                 for file in zip_file.namelist():
-                    update_data.configure(text="{} / {}".format(str(zip_file.namelist().index(file))
-                                                                , str(len(zip_file.namelist()))))
+                    update_data.configure(text=f"{zip_file.namelist().index(file)} / {len(zip_file.namelist())}")
                     if file == "Updater.exe" or file == "errors.log":
                         continue
                     try:
@@ -150,7 +148,6 @@ def check_updates() -> bool:
         else:
             return False
     except Exception as e:
-        print("ERROR")
         dump(e)
 
 
@@ -163,16 +160,13 @@ def open_app() -> None:
 
 
 def update_task() -> None:
-    update_thread = Thread(target=update, )
-    update_thread.daemon = True
-    update_thread.start()
+    update_thread = Thread(target=update, daemon=True).start()
 
 
 def init() -> None:
     if load_config():
         if check_updates():
             update_task()
-            open_app()
         else:
             show(choice_frame)
 
