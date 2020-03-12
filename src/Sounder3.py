@@ -45,7 +45,7 @@ error_reason: ClassVar = StringVar()
 music_bitrate: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.6"
+version: str = "3.1.7"
 played_songs: List = []
 songs: List = []
 current_song: int = 0
@@ -81,6 +81,7 @@ def dump(error_obj: ClassVar) -> None:
     error_reason.set(logging.getLevelName(error_obj))
     show(main_error_frame)
     logging.error(error_obj, exc_info=True)
+
 
 # end
 
@@ -462,6 +463,8 @@ def apply_settings() -> bool:
             main_window.attributes('-alpha', 0.8)
         if config["debug"]:
             main_window.bind('<F12>', debug)
+        if config["update"]:
+            Thread(target=check_for_update, daemon=True).start()
         logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
     except Exception as e:
         dump(e)
@@ -482,9 +485,7 @@ def init_mixer() -> bool:
         dump(e)
         return False
     try:
-        status_thread = Thread(target=song_stats, )
-        status_thread.daemon = True
-        status_thread.start()
+        Thread(target=song_stats, daemon=True).start()
     except Exception as e:
         dump(e)
         return False
@@ -492,7 +493,6 @@ def init_mixer() -> bool:
 
 
 def init_player() -> None:
-    global config
     try:
         if load_settings():
             verify_settings()
@@ -503,8 +503,6 @@ def init_player() -> None:
                             if init_music():
                                 refresh_window()
                                 show(main_player_frame)
-                                if config["update"]:
-                                    main_window.after(10, check_for_update)
     except Exception as e:
         dump(e)
 
@@ -746,50 +744,47 @@ def show(window) -> bool:
 
 
 def check_for_update() -> None:
-    global version, sounder_dir
-    if os.path.isfile(sounder_dir + "\\Updater.exe"):
-        try:
-            server_version = get(
-                "https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text.strip()
+    global version, sounder_dir, config
+    try:
+        if os.path.isfile(sounder_dir + "\\Updater.exe"):
+            server_version = get("https://raw.githubusercontent.com/losek1/Sounder3/master/updates/version.txt").text
             if int(version.replace(".", "")) < int(server_version.replace(".", "")):
-                update_window: ClassVar = Toplevel()
-                update_window.withdraw()
-                update_window.title("Update Available")
-                update_window.geometry(
-                    '400x200+{0}+{1}'.format(main_window.winfo_x() + 200, main_window.winfo_y() + 150))
-                update_window.iconbitmap(sounder_dir + "\\icon.ico")
-                update_window.grab_set()
-                update_window.resizable(width=FALSE, height=FALSE)
-                update_label: ClassVar = ttk.Label(update_window, text="New update is available", anchor="center"
-                                                   , font='Bahnschrift 14')
-                current_version_label: ClassVar = ttk.Label(update_window, text="Current version: \n" + str(version)
-                                                            , anchor="center", font='Bahnschrift 12', justify="center")
-                new_version_label: ClassVar = ttk.Label(update_window, text="New version: \n" + str(server_version)
-                                                        , anchor="center", font='Bahnschrift 12', justify="center")
-                update_now_button: ClassVar = ttk.Button(update_window, text="Update now", takefocus=0, cursor="hand2"
-                                                         , command=lambda: close("update"))
-                update_later_button: ClassVar = ttk.Button(update_window, text="Update later", takefocus=0,
-                                                           cursor="hand2"
-                                                           , command=lambda: update_window.destroy())
-                update_label.place(relx=0, rely=0.02, relwidth=1)
-                current_version_label.place(relx=0, rely=0.3, relwidth=0.5)
-                new_version_label.place(relx=0.5, rely=0.3, relwidth=0.5)
-                update_now_button.place(relx=0.5, rely=0.828, relwidth=0.5)
-                update_later_button.place(relx=0, rely=0.828, relwidth=0.5)
-                if config["theme"] == "light":
-                    update_window.configure(background="#fff")
-                    update_label.configure(background="#fff", foreground="#000")
-                    current_version_label.configure(background="#fff", foreground="#000")
-                    new_version_label.configure(background="#fff", foreground="#000")
-                else:
-                    update_window.configure(background="#000")
-                    update_label.configure(background="#000", foreground="#fff")
-                    current_version_label.configure(background="#000", foreground="#fff")
-                    new_version_label.configure(background="#000", foreground="#fff")
-                update_window.deiconify()
-                update_window.mainloop()
-        except Exception as e:
-            dump(e)
+                main_window.after_idle(update_choice)
+        else:
+            config["update"] = False
+    except:
+        pass
+
+
+def update_choice():
+    try:
+        update_window: ClassVar = Toplevel()
+        update_window.withdraw()
+        update_window.grab_set()
+        update_window.title("Update Available")
+        update_window.geometry(f"375x100+{main_window.winfo_x() + 215}+{main_window.winfo_y() + 200}")
+        update_window.iconbitmap(sounder_dir + "\\icon.ico")
+        update_window.resizable(width=FALSE, height=FALSE)
+        choice_label: ClassVar = ttk.Label(update_window, text="A new version of Sounder is available.\n"
+                                                               "Would you like to install it?", font='Bahnschrift 11',
+                                           anchor=CENTER, justify=CENTER)
+        choice_install_button: ClassVar = ttk.Button(update_window, text="UPDATE NOW", cursor="hand2", takefocus=False,
+                                                     command=lambda: close("update"))
+        choice_exit_button: ClassVar = ttk.Button(update_window, text="UPDATE LATER", cursor="hand2", takefocus=False,
+                                                  command=lambda: update_window.destroy())
+        choice_label.place(relx=0.5, rely=0.1, anchor="n")
+        choice_install_button.place(relx=0.7, rely=0.6, relwidth=0.35, anchor="n")
+        choice_exit_button.place(relx=0.3, rely=0.6, relwidth=0.35, anchor="n")
+        if config["theme"] == "light":
+            update_window.configure(background="#fff")
+            choice_label.configure(background="#fff", foreground="#000")
+        else:
+            update_window.configure(background="#000")
+            choice_label.configure(background="#000", foreground="#fff")
+        update_window.deiconify()
+        update_window.mainloop()
+    except Exception as e:
+        dump(e)
 
 
 def close(action: str = "close") -> None:
@@ -845,7 +840,7 @@ def toggle_theme() -> None:
     try:
         show(main_init_frame)
         main_init_frame.update()
-        sleep(0.25)
+        sleep(0.1)
         if config["theme"] == "light":
             config["theme"] = "dark"
         elif config["theme"] == "dark":
@@ -1204,7 +1199,7 @@ bottom_player_frame.place(relx=0.5, rely=0.09, anchor="n", relwidth=1, height=46
 # end
 # main
 show(main_init_frame)
-init_thread = Thread(target=init_player, daemon=True).start()
+init_thread: ClassVar = Thread(target=init_player, daemon=True).start()
 # end
 left_player_music_list.bind("<<ListboxSelect>>", list_box_play)
 main_window.protocol("WM_DELETE_WINDOW", close)

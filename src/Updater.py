@@ -31,7 +31,7 @@ updater_window.resizable(width=FALSE, height=FALSE)
 updater_window.configure(background="#fff")
 # images
 sounder_logo = PhotoImage(file="logo_1.png")
-update_img: ClassVar = PhotoImage(file=sounder_dir + "\\download.png")
+update_img: ClassVar = PhotoImage(file=sounder_dir + "\\download_light.png")
 # theme
 updater_theme = ttk.Style()
 updater_theme.theme_use('clam')
