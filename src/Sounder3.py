@@ -45,7 +45,7 @@ error_reason: ClassVar = StringVar()
 music_bitrate: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.7"
+version: str = "3.1.8"
 played_songs: List = []
 songs: List = []
 current_song: int = 0
@@ -694,7 +694,7 @@ def song_stats() -> None:
                             break
                         bottom_player_progress_bar["value"] = time / 10
                         music_position.set(f"{time / 10}s")
-                        sleep(0.1)
+                        sleep(0.09)
             elif loop and not mixer.music.get_busy() and not play_button_state:
                 loop = False
                 play_loop()

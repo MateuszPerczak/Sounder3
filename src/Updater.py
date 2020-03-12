@@ -10,6 +10,7 @@ try:
     import logging
     from io import BytesIO
     from time import sleep
+    from psutil import process_iter
 except ImportError:
     sys.exit(1)
 
@@ -21,10 +22,8 @@ logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
 # window setup
 updater_window: ClassVar = Tk()
 updater_window.withdraw()
-updater_window.geometry("375x100+{0}+{1}".format(int(updater_window.winfo_x() +
-                                                     ((updater_window.winfo_screenwidth() - 375) / 2))
-                                                 , int(updater_window.winfo_y() +
-                                                       ((updater_window.winfo_screenheight() - 100) / 2))))
+updater_window.geometry(f"375x100+{int(updater_window.winfo_x() + ((updater_window.winfo_screenwidth() - 375) / 2))}"
+                        f"+{int(updater_window.winfo_y() +((updater_window.winfo_screenheight() - 100) / 2))}")
 updater_window.title("Sounder updater")
 updater_window.iconbitmap(sounder_dir + "\\icon.ico")
 updater_window.resizable(width=FALSE, height=FALSE)
@@ -116,6 +115,9 @@ def update() -> bool:
                     bytes_downloaded += chunk_size
                     update_progress["value"] = bytes_downloaded
                     update_data.configure(text=f"{round(bytes_downloaded / 1000000, 1)}MB / {round(int(server_zip.headers.get('Content-Length')) / 1000000, 1)}MB")
+            for process in process_iter():
+                if process.name() == "Sounder3.exe":
+                    process.kill()
             change_mode("indeterminate")
             update_label.configure(text="Installing updates ...")
             with zipfile.ZipFile(BytesIO(package)) as zip_file:
@@ -160,7 +162,7 @@ def open_app() -> None:
 
 
 def update_task() -> None:
-    update_thread = Thread(target=update, daemon=True).start()
+    Thread(target=update, daemon=True).start()
 
 
 def init() -> None:
@@ -225,9 +227,7 @@ finish_label.place(relx=0, rely=0, relwidth=1, relheight=1)
 finish_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 # end
 # end
-main_thread = Thread(target=init, )
-main_thread.daemon = True
-main_thread.start()
+Thread(target=init, daemon=True).start()
 show(checking_frame)
 updater_window.deiconify()
 updater_window.mainloop()

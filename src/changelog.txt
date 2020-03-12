@@ -1,2 +1,1 @@
-~Fixed update window that was causing Sounder to hang up.
-
+~Some code optimizations!
