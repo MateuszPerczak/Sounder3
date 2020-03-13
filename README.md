@@ -39,6 +39,7 @@ Logo designer: reallinfo
 + requests
 + zipfile
 + random
++ psutil
 
 ## Some pictures of application
 ![Picture of playing music in application](https://github.com/losek1/Sounder3/blob/master/images/NEW0.PNG)
