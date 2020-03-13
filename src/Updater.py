@@ -1,5 +1,6 @@
 try:
-    from os import getcwd, startfile, path
+    from os import getcwd, startfile, rename, remove
+    from os.path import dirname, isfile, basename
     from threading import Thread
     import json
     from tkinter import *
@@ -11,12 +12,13 @@ try:
     from io import BytesIO
     from time import sleep
     from psutil import process_iter
+    from PIL import Image, ImageSequence, ImageTk
 except ImportError:
     sys.exit(1)
 
 # dir
 # sounder_dir: str = getcwd()
-sounder_dir: str = path.dirname(sys.executable)
+sounder_dir: str = dirname(sys.executable)
 # log
 logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
 # window setup
@@ -25,12 +27,12 @@ updater_window.withdraw()
 updater_window.geometry(f"375x100+{int(updater_window.winfo_x() + ((updater_window.winfo_screenwidth() - 375) / 2))}"
                         f"+{int(updater_window.winfo_y() +((updater_window.winfo_screenheight() - 100) / 2))}")
 updater_window.title("Sounder updater")
-updater_window.iconbitmap(sounder_dir + "\\icon.ico")
+try:
+    updater_window.iconbitmap(sounder_dir + "\\icon.ico")
+except:
+    sys.exit(1)
 updater_window.resizable(width=FALSE, height=FALSE)
 updater_window.configure(background="#fff")
-# images
-sounder_logo = PhotoImage(file="logo_1.png")
-update_img: ClassVar = PhotoImage(file=sounder_dir + "\\download_light.png")
 # theme
 updater_theme = ttk.Style()
 updater_theme.theme_use('clam')
@@ -43,7 +45,6 @@ updater_theme.map("TButton", background=[('pressed', '!disabled', '#000'), ('act
 config: Dict = {}
 server_version: str
 package = b''
-
 
 # functions
 
@@ -65,7 +66,7 @@ def show(window) -> bool:
 
 def load_config() -> bool:
     global config
-    if path.isfile('cfg.json'):
+    if isfile('cfg.json'):
         try:
             with open('cfg.json', 'r') as data:
                 config = json.load(data)
@@ -101,6 +102,7 @@ def update() -> bool:
     global server_version, package, sounder_dir
     chunk_size: int = 8192
     change_mode("determinate")
+    Thread(target=load_img, daemon=True).start()
     show(checking_frame)
     try:
         bytes_downloaded: float = 0
@@ -155,7 +157,7 @@ def check_updates() -> bool:
 
 def open_app() -> None:
     try:
-        if path.isfile("Sounder3.exe"):
+        if isfile("Sounder3.exe"):
             startfile("Sounder3.exe")
     except Exception as e:
         dump(e)
@@ -165,12 +167,55 @@ def update_task() -> None:
     Thread(target=update, daemon=True).start()
 
 
+def self_upgrade() -> bool:
+    try:
+        if basename(sys.argv[0]) == "New-Updater.exe":
+            if isfile("Updater.exe"):
+                remove("Updater.exe")
+            rename(sys.argv[0], "Updater.exe")
+            return False
+        elif isfile("New-Updater.exe"):
+            startfile("New-Updater.exe")
+            return True
+        else:
+            return False
+    except Exception as e:
+        dump(e)
+
+
+def show_gui() -> None:
+    show(checking_frame)
+    updater_window.deiconify()
+    updater_window.lift()
+    updater_window.focus_force()
+
+
 def init() -> None:
-    if load_config():
+    if self_upgrade():
+        close()
+    elif load_config():
+        show_gui()
         if check_updates():
             update_task()
         else:
             show(choice_frame)
+
+
+def load_img() -> None:
+    try:
+        img_frames: List = []
+        download_img: ClassVar = Image.open("download_light.gif")
+        for frame in ImageSequence.Iterator(download_img):
+            img_frames.append(ImageTk.PhotoImage(frame.copy().convert('RGBA').resize((48, 48))))
+        if len(img_frames) > 1:
+            while True:
+                for frame in img_frames:
+                    update_img_label.configure(image=frame)
+                    sleep(0.02)
+        else:
+            update_img_label.configure(image=img_frames)
+    except Exception as e:
+        dump(e)
 
 
 # frames
@@ -186,7 +231,7 @@ error_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 # update frame
 update_frame: ClassVar = Frame(updater_window)
 update_frame.configure(background="#fff")
-update_img_label: ClassVar = ttk.Label(update_frame, image=update_img, anchor=CENTER)
+update_img_label: ClassVar = ttk.Label(update_frame, image=None, anchor=CENTER)
 update_label: ClassVar = ttk.Label(update_frame, text="Downloading updates ...", font='Bahnschrift 11')
 update_data: ClassVar = ttk.Label(update_frame, text="-- MB / --MB", font='Bahnschrift 10', anchor=CENTER)
 update_progress: ClassVar = ttk.Progressbar(update_frame, orient=HORIZONTAL)
@@ -228,6 +273,4 @@ finish_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 # end
 # end
 Thread(target=init, daemon=True).start()
-show(checking_frame)
-updater_window.deiconify()
 updater_window.mainloop()

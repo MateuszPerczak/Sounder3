@@ -45,7 +45,7 @@ error_reason: ClassVar = StringVar()
 music_bitrate: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.8"
+version: str = "3.1.9"
 played_songs: List = []
 songs: List = []
 current_song: int = 0
@@ -260,7 +260,7 @@ def apply_theme() -> bool:
             main_theme.configure("S.TLabel", background='#000', foreground='#fff', border='0')
             main_theme.configure("W.Horizontal.TProgressbar", foreground='#000', background='#000', lightcolor='#fff'
                                  , darkcolor='#fff', bordercolor='#fff', troughcolor='#fff')
-            main_theme.configure("TButton", background='#fff', relief="flat", font=('Bahnschrift', 11),
+            main_theme.configure("TButton", background='#fff', relief="flat", font=('Bahnschrift', 10),
                                  foreground='#000')
             main_theme.map("TButton", background=[('pressed', '!disabled', '#fff'), ('active', '#eee')])
             main_theme.map("TScale", background=[('pressed', '!disabled', '#111'), ('active', '#111')])
@@ -347,7 +347,7 @@ def apply_theme() -> bool:
             main_theme.configure("W.Horizontal.TProgressbar", foreground='#000', background='#1e88e5', lightcolor='#000'
                                  , darkcolor='#000', bordercolor='#000', troughcolor='#000')
             main_theme.configure("TButton", relief="flat", background='#000',
-                                 font=('Bahnschrift', 11), foreground='#fff')
+                                 font=('Bahnschrift', 10), foreground='#fff')
             main_theme.map("TButton", background=[('pressed', '!disabled', '#000'), ('active', '#111')])
             main_theme.map("TScale", background=[('pressed', '!disabled', '#0d77d4'), ('active', '#0d77d4')])
             main_theme.configure("TScale", troughcolor='#111', background='#1e88e5', relief="flat",
@@ -765,22 +765,18 @@ def update_choice():
         update_window.geometry(f"375x100+{main_window.winfo_x() + 215}+{main_window.winfo_y() + 200}")
         update_window.iconbitmap(sounder_dir + "\\icon.ico")
         update_window.resizable(width=FALSE, height=FALSE)
+        update_window.configure(background="#fff")
         choice_label: ClassVar = ttk.Label(update_window, text="A new version of Sounder is available.\n"
                                                                "Would you like to install it?", font='Bahnschrift 11',
                                            anchor=CENTER, justify=CENTER)
+        choice_label.configure(background="#fff", foreground="#000")
         choice_install_button: ClassVar = ttk.Button(update_window, text="UPDATE NOW", cursor="hand2", takefocus=False,
                                                      command=lambda: close("update"))
         choice_exit_button: ClassVar = ttk.Button(update_window, text="UPDATE LATER", cursor="hand2", takefocus=False,
                                                   command=lambda: update_window.destroy())
         choice_label.place(relx=0.5, rely=0.1, anchor="n")
-        choice_install_button.place(relx=0.7, rely=0.6, relwidth=0.35, anchor="n")
-        choice_exit_button.place(relx=0.3, rely=0.6, relwidth=0.35, anchor="n")
-        if config["theme"] == "light":
-            update_window.configure(background="#fff")
-            choice_label.configure(background="#fff", foreground="#000")
-        else:
-            update_window.configure(background="#000")
-            choice_label.configure(background="#000", foreground="#fff")
+        choice_install_button.place(relx=0.7, rely=0.6, anchor="n")
+        choice_exit_button.place(relx=0.3, rely=0.6, anchor="n")
         update_window.deiconify()
         update_window.mainloop()
     except Exception as e:

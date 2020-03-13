@@ -44,7 +44,8 @@ Source: "C:\Users\Mateusz\Desktop\Sounder3\*.txt"; DestDir: "{app}"; Flags: igno
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.json"; DestDir: "{app}"; Flags: ignoreversion 
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.ico"; DestDir: "{app}"; Flags: ignoreversion 
 Source: "C:\Users\Mateusz\Desktop\Sounder3\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Mateusz\Desktop\Sounder3\*.zip"; DestDir: "{app}"; Flags: ignoreversion  
+Source: "C:\Users\Mateusz\Desktop\Sounder3\*.zip"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\Mateusz\Desktop\Sounder3\*.gif"; DestDir: "{app}"; Flags: ignoreversion  
 ; Folders
 
 
