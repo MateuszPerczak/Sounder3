@@ -2,26 +2,26 @@ try:
     import os
     from time import sleep
     from threading import Thread
-    import json
+    from json import dump, load
     import logging
     from requests import get
-    from tkinter import *
+    from tkinter import Tk, PhotoImage, StringVar, Frame, Entry, Listbox, Toplevel, sys, Text
     from tkinter import ttk
     from tkinter.filedialog import askdirectory
     from pygame import mixer
     from PIL import ImageTk
     from PIL import Image
     from io import BytesIO
-    from mutagen.id3 import ID3
     from mutagen.mp3 import MP3
-    from typing import ClassVar, Dict, List
+    from typing import ClassVar, Dict
     from random import shuffle, choice, sample
-except ImportError:
-    sys.exit(1)
+    from re import findall
+except ImportError as e:
+    sys.exit(e)
 
 # dir
-# sounder_dir: str = os.getcwd()
-sounder_dir: str = os.path.dirname(sys.executable)
+sounder_dir: str = os.getcwd()
+# sounder_dir: str = os.path.dirname(sys.executable)
 user_path: str = os.path.expanduser("~")
 # end
 main_window: ClassVar = Tk()
@@ -29,13 +29,12 @@ main_window.withdraw()
 main_window.geometry("806x500")
 main_window.title("Sounder3")
 main_window.iconbitmap(sounder_dir + "\\icon.ico")
-main_window.resizable(width=FALSE, height=FALSE)
+main_window.resizable(width=False, height=False)
 # icons
 logo_1_img: ClassVar = PhotoImage(file=sounder_dir + "\\logo_1.png")
 error_img: ClassVar = PhotoImage(file=sounder_dir + "\\error_light.png")
 # end
 # var
-path: ClassVar = StringVar()
 music_title: ClassVar = StringVar()
 music_artist: ClassVar = StringVar()
 music_position: ClassVar = StringVar()
@@ -45,11 +44,12 @@ error_reason: ClassVar = StringVar()
 music_bitrate: ClassVar = StringVar()
 debug_info: ClassVar = StringVar()
 config: Dict = {}
-version: str = "3.1.9"
-played_songs: List = []
-songs: List = []
+version: str = "3.2.0"
+played_songs: list = []
+songs: list = []
+search_list: list = []
 current_song: int = 0
-random_list: List = []
+random_list: list = []
 play_button_state: bool = False
 default_album_img: ClassVar
 repeat_all_img: ClassVar
@@ -67,12 +67,13 @@ refresh_img: ClassVar
 toggle_on_img: ClassVar
 toggle_off_img: ClassVar
 album_img: ClassVar
+close_img: ClassVar
 
 
 # end
 # functions
 # errors
-def dump(error_obj: ClassVar) -> None:
+def error_dump(error_obj: ClassVar) -> None:
     try:
         if mixer.music.get_busy():
             mixer.music.pause()
@@ -88,36 +89,36 @@ def dump(error_obj: ClassVar) -> None:
 
 def load_settings() -> bool:
     global config, version, sounder_dir
-    os.chdir(sounder_dir)
     config = {"refresh_time": 1.0, "theme": "light", "version": version, "transition_duration": 1,
               "fst_buffer": False, "mode": "r_n",
-              "last_song": "", "continue": False, "path": user_path + "\\Music", "fade": False, "debug": False,
+              "last_song": "", "continue": False, "folders": [user_path + "\\Music"], "fade": False, "debug": False,
               "update": True}
-
     if os.path.isfile("cfg.json"):
         try:
             with open('cfg.json', 'r') as data:
-                config = json.load(data)
+                config = load(data)
             return True
         except:
             pass
     with open('cfg.json', 'w') as data:
-        json.dump(config, data)
+        dump(config, data)
     return True
 
 
 def save_settings() -> bool:
-    global config, sounder_dir
-    os.chdir(sounder_dir)
+    global config
     if os.path.isfile('cfg.json'):
         try:
             with open('cfg.json', 'w') as data:
-                json.dump(config, data)
-            os.chdir(config["path"])
+                dump(config, data)
             return True
         except Exception as e:
-            dump(e)
+            error_dump(e)
             return False
+
+
+def sort_by_letter(element) -> str:
+    return os.path.splitext((os.path.basename(element)))[0][0].lower()
 
 
 def load_music() -> bool:
@@ -125,34 +126,104 @@ def load_music() -> bool:
     songs = []
     played_songs = []
     try:
-        os.chdir(config["path"])
-        for file in os.listdir(config["path"]):
-            if file.endswith(".xm") or file.endswith(".mp3") or file.endswith(".wav") or file.endswith(".ogg"):
-                songs.append(file)
+        for folder in config["folders"]:
+            for file in os.listdir(folder):
+                if file.endswith(".xm") or file.endswith(".mp3") or file.endswith(".wav") or file.endswith(".ogg") or file.endswith(".flac"):
+                    songs.append(os.path.abspath(os.path.join(folder, file)))
         random_list = list(range(0, len(songs)))
         shuffle(random_list)
+        songs.sort(key=sort_by_letter)
     except:
         return False
     return True
 
 
-def change_dir() -> bool:
+# directory
+
+
+def folders() -> None:
     global config
-    target_dir: str = askdirectory()
-    if bool(target_dir):
-        config["path"] = target_dir.rstrip('\n')
-        return True
-    else:
-        return False
+    folder_window: ClassVar = Toplevel()
+    folder_window.withdraw()
+    folder_window.grab_set()
+    folder_window.title("Folders")
+    folder_window.geometry(f"400x400+{main_window.winfo_x() + 215}+{main_window.winfo_y() + 50}")
+    folder_window.minsize(400, 300)
+    folder_window.iconbitmap(sounder_dir + "\\icon.ico")
+    folder_window.resizable(width=False, height=True)
+    if config["theme"] == "light":
+        folder_window.configure(background="#fff")
+    elif config["theme"] == "dark":
+        folder_window.configure(background="#000")
+    update_folders(folder_window)
+    folder_window.deiconify()
+    folder_window.mainloop()
 
 
+def update_folders(window_obj: ClassVar) -> None:
+    global config
+    color: list = []
+    y: int = 100
+    if config["theme"] == "light":
+        color = ["#000", "#fff"]
+    elif config["theme"] == "dark":
+        color = ["#1e88e5", "#000"]
+    for widget in window_obj.winfo_children():
+        widget.destroy()
+    music_label: ClassVar = ttk.Label(window_obj, text="Music on this computer", font='Bahnschrift 11')
+    music_label.place(relx=0.5, y=2, anchor='n')
+    add_folder_button: ClassVar = ttk.Button(window_obj, text="+ Add folder", cursor="hand2", takefocus=False,
+                                             command=lambda: add_folder(window_obj))
+    add_folder_button.place(relx=0.5, y=50, anchor='n')
+    for folder in config["folders"]:
+        add_card(folder, window_obj, color, y)
+        y += 65
+
+
+def add_card(path: str, window_obj: ClassVar, color: list, y: int) -> ClassVar:
+    card: ClassVar = Frame(window_obj, background=color[0], relief='flat')
+    card_frame: ClassVar = Frame(card, background=color[1], relief='flat')
+    name_label: ClassVar = ttk.Label(card_frame, text=os.path.basename(os.path.normpath(path)), font='Bahnschrift 11')
+    path_label: ClassVar = ttk.Label(card_frame, text=path, font='Bahnschrift 10')
+    remove_button: ClassVar = ttk.Button(card_frame, image=close_img, text="Remove", cursor="hand2", takefocus=False
+                                         , compound='top')
+    remove_button.configure(command=lambda: remove_card(card, window_obj, path))
+    name_label.place(relx=0.01, rely=0.08)
+    path_label.place(relx=0.01, rely=0.5)
+    remove_button.place(relx=0.67, rely=0, relheight=1)
+    card_frame.place(relx=0.5, y=1, height=58, width=278, anchor='n')
+    card.place(relx=0.5, y=y, height=60, width=280, anchor='n')
+    return card
+
+
+def remove_card(card: ClassVar, window_obj: ClassVar, path: str) -> None:
+    global config
+    config["folders"].remove(path)
+    card.destroy()
+    update_folders(window_obj)
+
+
+def add_folder(window_obj: ClassVar) -> None:
+    global config
+    folder: str = askdirectory()
+    if bool(folder) and not folder in config["folders"]:
+        config["folders"].append(folder)
+        update_folders(window_obj)
+        refresh_dir()
+
+
+# end
 def refresh_window() -> None:
-    global config, songs, current_song
-    path.set(str(config["path"].rstrip('\n')).replace("/", "\\"))
-    left_player_music_list.delete(0, END)
-    if bool(songs):
-        for element in songs:
-            left_player_music_list.insert(len(songs), os.path.splitext(element)[0])
+    global songs, current_song, search_list
+    left_player_music_list.delete(0, 'end')
+    if bool(songs) and bool(search_list):
+        for song in search_list:
+            left_player_music_list.insert(len(search_list), os.path.splitext(os.path.basename(song))[0])
+        left_player_music_list.select_set(search_list.index(songs[current_song]))
+        left_player_music_list.see(search_list.index(songs[current_song]))
+    elif bool(songs) and not bool(search_list):
+        for song in songs:
+            left_player_music_list.insert(len(songs), os.path.splitext(os.path.basename(song))[0])
         left_player_music_list.select_set(current_song)
         left_player_music_list.see(current_song)
 
@@ -171,7 +242,7 @@ def init_music() -> bool:
                 set_song_attrib()
         return True
     except Exception as e:
-        dump(e)
+        error_dump(e)
         return False
 
 
@@ -182,11 +253,6 @@ def refresh_dir() -> None:
 
 def verify_settings() -> None:
     global config, user_path, version
-    try:
-        if not type(config["refresh_time"]) is float:
-            config["refresh_time"] = 1.0
-    except:
-        config["refresh_time"] = 1.0
     try:
         if not type(config["theme"]) is str:
             config["theme"] = "light"
@@ -199,11 +265,6 @@ def verify_settings() -> None:
             config["version"] = version
     except:
         config["version"] = version
-    try:
-        if not type(config["transition_duration"]) is float:
-            config["transition_duration"] = 1
-    except:
-        config["transition_duration"] = 1
     try:
         if not type(config["fst_buffer"]) is bool:
             config["fst_buffer"] = False
@@ -235,10 +296,8 @@ def verify_settings() -> None:
     except:
         config["debug"] = False
     try:
-        if not type(config["path"]) is str:
-            config["path"] = (user_path + "\\Music").replace('/', '\\')
-        else:
-            os.chdir(config["path"])
+        if not type(config["folders"]) is list:
+            config["folders"] = (user_path + "\\Music").replace('/', '\\')
     except:
         config["path"] = (user_path + "\\Music").replace('/', '\\')
     try:
@@ -251,14 +310,13 @@ def verify_settings() -> None:
 def apply_theme() -> bool:
     global config, repeat_all_img, repeat_one_img, repeat_none_img, forward_img, play_img, previous_img, pause_img \
         , toggle_off_img, toggle_on_img, default_album_img, settings_img, back_img, folder_img, refresh_img \
-        , play_button_state, shuffle_play_img
+        , play_button_state, shuffle_play_img, close_img
     main_theme = ttk.Style()
     main_theme.theme_use('clam')
     try:
         if config["theme"] == "light":
-            main_theme.configure("W.TLabel", background='#fff', foreground='#000', border='0')
-            main_theme.configure("S.TLabel", background='#000', foreground='#fff', border='0')
-            main_theme.configure("W.Horizontal.TProgressbar", foreground='#000', background='#000', lightcolor='#fff'
+            main_theme.configure("TLabel", background='#fff', foreground='#000', border='0')
+            main_theme.configure("Horizontal.TProgressbar", foreground='#000', background='#000', lightcolor='#fff'
                                  , darkcolor='#fff', bordercolor='#fff', troughcolor='#fff')
             main_theme.configure("TButton", background='#fff', relief="flat", font=('Bahnschrift', 10),
                                  foreground='#000')
@@ -272,14 +330,14 @@ def apply_theme() -> bool:
             main_theme.map("Horizontal.TScrollbar", background=[('pressed', '!disabled', '#eee'), ('active', '#eee')])
             left_player_music_list.configure(selectbackground="#000", foreground='#000', background='#fff',
                                              relief="flat")
+            top_player_search_box.configure(selectbackground="#000", selectforeground="#fff", background="#fff"
+                                            , foreground="#000")
             main_player_frame.configure(background="#fff")
             buttons_player_frame.configure(background="#fff")
             right_player_frame.configure(background="#fff")
             bottom_player_frame.configure(background="#fff")
             top_player_frame.configure(background="#fff")
             settings_frame_third.configure(background="#fff")
-            settings_frame_second.configure(background="#fff")
-            settings_frame_first.configure(background="#fff")
             settings_bar_frame.configure(background="#fff")
             main_settings_frame.configure(background="#fff")
             settings_frame_fourth.configure(background="#fff")
@@ -289,6 +347,7 @@ def apply_theme() -> bool:
             settings_frame_seventh.configure(background="#fff")
             left_player_frame.configure(background="#fff")
             bottom_time_frame.configure(background="#fff")
+            top_search_frame.configure(background="#000")
             default_album_img = ImageTk.PhotoImage(Image.open(sounder_dir + "\\cover_art_light.png").resize((220, 220)))
             repeat_all_img = PhotoImage(file=sounder_dir + "\\repeat_all_light.png")
             repeat_one_img = PhotoImage(file=sounder_dir + "\\repeat_one_light.png")
@@ -304,6 +363,8 @@ def apply_theme() -> bool:
             toggle_on_img = PhotoImage(file=sounder_dir + "\\toggle_on_light.png")
             toggle_off_img = PhotoImage(file=sounder_dir + "\\toggle_off_light.png")
             shuffle_play_img = PhotoImage(file=sounder_dir + "\\shuffle_light.png")
+            close_img = PhotoImage(file=sounder_dir + "\\close_light.png")
+            top_player_delete_button.configure(image=close_img)
             right_player_album_art_label.configure(image=default_album_img)
             mode_player_mode_button.configure(image=repeat_none_img)
             buttons_player_forward_button.configure(image=forward_img)
@@ -342,9 +403,8 @@ def apply_theme() -> bool:
             else:
                 seventh_settings_update_button.configure(image=toggle_off_img)
         elif config["theme"] == "dark":
-            main_theme.configure("W.TLabel", foreground='#fff', background='#000', border='0')
-            main_theme.configure("S.TLabel", background='#1e88e5', foreground='#000', border='0')
-            main_theme.configure("W.Horizontal.TProgressbar", foreground='#000', background='#1e88e5', lightcolor='#000'
+            main_theme.configure("TLabel", foreground='#fff', background='#000', border='0')
+            main_theme.configure("Horizontal.TProgressbar", foreground='#000', background='#1e88e5', lightcolor='#000'
                                  , darkcolor='#000', bordercolor='#000', troughcolor='#000')
             main_theme.configure("TButton", relief="flat", background='#000',
                                  font=('Bahnschrift', 10), foreground='#fff')
@@ -358,14 +418,15 @@ def apply_theme() -> bool:
             main_theme.map("Horizontal.TScrollbar", background=[('pressed', '!disabled', '#111'), ('active', '#111')])
             left_player_music_list.configure(selectbackground="#1e88e5", foreground='#fff', background='#000',
                                              relief="flat")
+            top_player_search_box.configure(selectbackground="#1e88e5", selectforeground="#fff", background="#000"
+                                            , foreground="#fff")
+            top_search_frame.configure(background="#1e88e5")
             main_player_frame.configure(background="#000")
             buttons_player_frame.configure(background="#000")
             right_player_frame.configure(background="#000")
             bottom_player_frame.configure(background="#000")
             top_player_frame.configure(background="#000")
             settings_frame_third.configure(background="#000")
-            settings_frame_second.configure(background="#000")
-            settings_frame_first.configure(background="#000")
             settings_bar_frame.configure(background="#000")
             main_settings_frame.configure(background="#000")
             settings_frame_fourth.configure(background="#000")
@@ -390,6 +451,8 @@ def apply_theme() -> bool:
             toggle_on_img = PhotoImage(file=sounder_dir + "\\toggle_on_dark.png")
             toggle_off_img = PhotoImage(file=sounder_dir + "\\toggle_off_dark.png")
             shuffle_play_img = PhotoImage(file=sounder_dir + "\\shuffle_dark.png")
+            close_img = PhotoImage(file=sounder_dir + "\\close_dark.png")
+            top_player_delete_button.configure(image=close_img)
             right_player_album_art_label.configure(image=default_album_img)
             mode_player_mode_button.configure(image=repeat_none_img)
             buttons_player_forward_button.configure(image=forward_img)
@@ -432,7 +495,7 @@ def apply_theme() -> bool:
             return False
         return True
     except Exception as e:
-        dump(e)
+        error_dump(e)
         return False
 
 
@@ -440,8 +503,8 @@ def debug(char) -> None:
     global config, play_button_state, songs, played_songs
     if char.keysym == "F12":
         show(main_debug_screen)
-        debug_info.set(f"refresh_time: {config['refresh_time']} theme: {config['theme']}"
-                       f"version: {config['version']} transition_duration: {config['transition_duration']} "
+        debug_info.set(f"theme: {config['theme']}"
+                       f"version: {config['version']}"
                        f"fst_buffer: {config['fst_buffer']} mode: {config['mode']} continue: {config['continue']} "
                        f"fade: {config['fade']} debug: {config['debug']} music_title: {music_title.get()} "
                        f"music_artist: {music_artist.get()} music_position: {music_position.get()} "
@@ -453,8 +516,6 @@ def debug(char) -> None:
 def apply_settings() -> bool:
     global config
     try:
-        first_settings_refresh_scale.set(config["refresh_time"])
-        second_settings_duration_scale.set(config["transition_duration"])
         music_position.set("--:--")
         music_total.set("--:--")
         music_bitrate.set("---")
@@ -465,9 +526,9 @@ def apply_settings() -> bool:
             main_window.bind('<F12>', debug)
         if config["update"]:
             Thread(target=check_for_update, daemon=True).start()
-        logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
+        logging.basicConfig(filename=f"{sounder_dir}\\errors.log", level=logging.ERROR)
     except Exception as e:
-        dump(e)
+        error_dump(e)
         return False
     return True
 
@@ -476,18 +537,18 @@ def init_mixer() -> bool:
     global config
     try:
         if config["fst_buffer"]:
-            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=2048, devicename=None)
-        else:
             mixer.pre_init(frequency=44100, size=16, channels=2, buffer=3072, devicename=None)
+        else:
+            mixer.pre_init(frequency=44100, size=16, channels=2, buffer=4096, devicename=None)
         mixer.init()
         mixer.music.set_volume(1)
     except Exception as e:
-        dump(e)
+        error_dump(e)
         return False
     try:
         Thread(target=song_stats, daemon=True).start()
     except Exception as e:
-        dump(e)
+        error_dump(e)
         return False
     return True
 
@@ -504,7 +565,7 @@ def init_player() -> None:
                                 refresh_window()
                                 show(main_player_frame)
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
 def forward() -> None:
@@ -559,8 +620,13 @@ def previous() -> None:
 
 
 def list_box_play(event=None) -> None:
-    global songs, play_button_state, current_song
+    global songs, play_button_state, current_song, search_list
     try:
+        if bool(songs) and bool(search_list):
+            current_song = songs.index(search_list[left_player_music_list.curselection()[0]])
+            clear_search()
+        elif bool(songs) and bool(left_player_music_list.curselection()):
+            current_song = left_player_music_list.curselection()[0]
         if bool(songs):
             if play_button_state:
                 if mixer.music.get_busy():
@@ -568,11 +634,10 @@ def list_box_play(event=None) -> None:
             elif not play_button_state:
                 play_button_state = True
                 buttons_player_play_button.configure(image=pause_img)
-            current_song = left_player_music_list.curselection()[0]
             mixer.music.load(songs[current_song])
             mixer.music.play()
             set_song_attrib()
-    except:
+    except Exception:
         refresh_dir()
 
 
@@ -603,7 +668,7 @@ def play() -> None:
 
 
 def set_song_attrib() -> None:
-    global songs, current_song, album_img, config
+    global songs, current_song, album_img, config, search_list
     if bool(songs):
         if os.path.splitext(songs[current_song])[1] == ".mp3":
             try:
@@ -637,7 +702,7 @@ def set_song_attrib() -> None:
                         right_player_title_label.configure(font='Bahnschrift 9')
                     else:
                         right_player_title_label.configure(font='Bahnschrift 11')
-                    music_title.set(os.path.splitext(songs[current_song])[0])
+                    music_title.set(os.path.splitext(os.path.basename(songs[current_song]))[0])
                 try:
                     music_artist.set(tags["TPE1"])
                 except:
@@ -648,10 +713,11 @@ def set_song_attrib() -> None:
                     right_player_title_label.configure(font='Bahnschrift 9')
                 else:
                     right_player_title_label.configure(font='Bahnschrift 11')
-                music_title.set(os.path.splitext(songs[current_song])[0])
+                music_title.set(os.path.splitext(os.path.basename(songs[current_song]))[0])
                 music_artist.set("")
-            left_player_music_list.selection_clear(0, END)
-            left_player_music_list.select_set(current_song)
+            left_player_music_list.selection_clear(0, 'end')
+            if not bool(search_list):
+                left_player_music_list.select_set(current_song)
             music_position.set("0:00")
         else:
             bottom_player_progress_bar["maximum"] = 999999
@@ -662,8 +728,8 @@ def set_song_attrib() -> None:
                 right_player_title_label.configure(font='Bahnschrift 9')
             else:
                 right_player_title_label.configure(font='Bahnschrift 11')
-            music_title.set(os.path.splitext(songs[current_song])[0])
-            left_player_music_list.selection_clear(0, END)
+            music_title.set(os.path.splitext(os.path.basename(songs[current_song]))[0])
+            left_player_music_list.selection_clear(0, 'end')
             left_player_music_list.select_set(current_song)
             music_position.set("0:00")
             music_total.set("--:--")
@@ -678,30 +744,20 @@ def song_stats() -> None:
         while True:
             if mixer.music.get_busy() and play_button_state:
                 bottom_player_progress_bar["value"] = mixer.music.get_pos() / 1000
-                music_position.set(str(int(divmod((mixer.music.get_pos() / 1000), 60)[0]))
-                                   + ":" + str(int(divmod((mixer.music.get_pos() / 1000), 60)[1])).zfill(2))
-                sleep(float(config["refresh_time"] * 0.3))
+
+                music_position.set(str(int(divmod((mixer.music.get_pos() / 1000), 60)[0])) + ":" + str(int(divmod((mixer.music.get_pos() / 1000), 60)[1])).zfill(2))
+                sleep(1)
             elif not mixer.music.get_busy() and play_button_state:
                 play_button_state = False
                 loop = True
                 buttons_player_play_button.configure(image=play_img)
-                if config["transition_duration"] != 0:
-                    bottom_player_progress_bar["maximum"] = config["transition_duration"]
-                    bottom_player_progress_bar["value"] = 0
-                    music_total.set(f"{int(config['transition_duration'])}s")
-                    for time in range(int(config["transition_duration"] * 10)):
-                        if mixer.music.get_busy():
-                            break
-                        bottom_player_progress_bar["value"] = time / 10
-                        music_position.set(f"{time / 10}s")
-                        sleep(0.09)
             elif loop and not mixer.music.get_busy() and not play_button_state:
                 loop = False
                 play_loop()
             else:
-                sleep(float(config["refresh_time"] * 0.6))
+                sleep(2)
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
 def play_loop() -> None:
@@ -739,7 +795,7 @@ def show(window) -> bool:
         window.tkraise()
         return True
     except Exception as e:
-        dump(e)
+        error_dump(e)
         return False
 
 
@@ -756,7 +812,7 @@ def check_for_update() -> None:
         pass
 
 
-def update_choice():
+def update_choice() -> None:
     try:
         update_window: ClassVar = Toplevel()
         update_window.withdraw()
@@ -764,11 +820,11 @@ def update_choice():
         update_window.title("Update Available")
         update_window.geometry(f"375x100+{main_window.winfo_x() + 215}+{main_window.winfo_y() + 200}")
         update_window.iconbitmap(sounder_dir + "\\icon.ico")
-        update_window.resizable(width=FALSE, height=FALSE)
+        update_window.resizable(width=False, height=False)
         update_window.configure(background="#fff")
         choice_label: ClassVar = ttk.Label(update_window, text="A new version of Sounder is available.\n"
                                                                "Would you like to install it?", font='Bahnschrift 11',
-                                           anchor=CENTER, justify=CENTER)
+                                           anchor='center', justify='center')
         choice_label.configure(background="#fff", foreground="#000")
         choice_install_button: ClassVar = ttk.Button(update_window, text="UPDATE NOW", cursor="hand2", takefocus=False,
                                                      command=lambda: close("update"))
@@ -780,11 +836,10 @@ def update_choice():
         update_window.deiconify()
         update_window.mainloop()
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
 def close(action: str = "close") -> None:
-    global sounder_dir
     for widget in main_window.winfo_children():
         widget.destroy()
     main_window.destroy()
@@ -793,7 +848,6 @@ def close(action: str = "close") -> None:
         if os.path.isfile(sys.argv[0]):
             os.startfile(sys.argv[0])
     elif action == "update":
-        os.chdir(sounder_dir)
         if os.path.isfile("Updater.exe"):
             os.startfile("Updater.exe")
     logging.shutdown()
@@ -801,12 +855,10 @@ def close(action: str = "close") -> None:
 
 
 def open_logs() -> None:
-    global sounder_dir
     try:
         main_window.unbind('<F12>')
         if logging.getLogger().isEnabledFor(logging.ERROR):
             logging.shutdown()
-        os.chdir(sounder_dir)
         if os.path.isfile("errors.log"):
             os.startfile("errors.log")
     except:
@@ -815,20 +867,11 @@ def open_logs() -> None:
 
 def change_dir_btn() -> None:
     try:
-        if change_dir():
+        if folders():
             refresh_dir()
     except:
         pass
 
-
-def set_refresh(value) -> None:
-    global config
-    config["refresh_time"] = round(float(value), 1)
-
-
-def set_duration(value) -> None:
-    global config
-    config["transition_duration"] = round(float(value), 1)
 
 
 def toggle_theme() -> None:
@@ -842,10 +885,9 @@ def toggle_theme() -> None:
         elif config["theme"] == "dark":
             config["theme"] = "light"
         if apply_theme():
-            set_song_attrib()
-        show(main_settings_frame)
+            show(main_settings_frame)
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
 def toggle_buffer() -> None:
@@ -858,7 +900,7 @@ def toggle_buffer() -> None:
             fourth_settings_buffer_button.configure(image=toggle_on_img)
             config["fst_buffer"] = True
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
 def toggle_continue() -> None:
@@ -871,7 +913,7 @@ def toggle_continue() -> None:
             fifth_settings_continue_button.configure(image=toggle_on_img)
             config["continue"] = True
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
 def toggle_fade() -> None:
@@ -886,10 +928,10 @@ def toggle_fade() -> None:
             config["fade"] = True
             main_window.attributes('-alpha', 0.8)
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
-def toggle_update():
+def toggle_update() -> None:
     global config
     try:
         if config["update"]:
@@ -899,20 +941,19 @@ def toggle_update():
             seventh_settings_update_button.configure(image=toggle_on_img)
             config["update"] = True
     except Exception as e:
-        dump(e)
+        error_dump(e)
 
 
-def changelog():
+def changelog() -> None:
     global sounder_dir, config
-    os.chdir(sounder_dir)
     changelog_window: ClassVar = Toplevel()
     changelog_window.withdraw()
     changelog_window.title("Sounder Changelog")
     changelog_window.geometry('450x350+{0}+{1}'.format(main_window.winfo_x() + 178, main_window.winfo_y() + 75))
     changelog_window.iconbitmap(sounder_dir + "\\icon.ico")
     changelog_window.grab_set()
-    changelog_window.resizable(width=FALSE, height=FALSE)
-    changelog_label: ClassVar = ttk.Label(changelog_window, text="What's new?", font=('Bahnschrift', 14), anchor=CENTER)
+    changelog_window.resizable(width=False, height=False)
+    changelog_label: ClassVar = ttk.Label(changelog_window, text="What's new?", font=('Bahnschrift', 14), anchor='center')
     changelog_text: ClassVar = Text(changelog_window, bd=0, cursor="arrow", takefocus=0, font=('Bahnschrift', 10))
     changelog_label.place(relx=0.5, rely=0.01, relwidth=1, relheight=0.1, anchor="n")
     changelog_text.place(relx=0.5, rely=0.21, relwidth=1, relheight=0.8, anchor="n")
@@ -929,15 +970,45 @@ def changelog():
     if os.path.isfile('changelog.txt'):
         with open('changelog.txt', 'r') as text:
             for line in text.readlines():
-                changelog_text.insert(END, line)
-        changelog_text.configure(state=DISABLED)
-    changelog_text.insert(END, "[File not found!]")
-    try:
-        os.chdir(config["path"].rstrip('\n'))
-    except Exception as e:
-        dump(e)
+                changelog_text.insert('end', line)
+        changelog_text.configure(state='disabled')
+    changelog_text.insert('end', "[File not found!]")
     changelog_window.deiconify()
     changelog_window.mainloop()
+
+
+def search(e=None) -> None:
+    global songs, search_list, current_song
+    if bool(songs) and bool(top_player_search_box.get()):
+        search_list = []
+        left_player_music_list.select_clear(0, 'end')
+        left_player_music_list.delete(0, 'end')
+        for song in songs:
+            if bool(findall(top_player_search_box.get().lower(), song.lower())):
+                left_player_music_list.insert(len(songs), os.path.splitext(os.path.basename(song))[0])
+                search_list.append(song)
+        if bool(search_list) and songs[current_song] in search_list:
+            left_player_music_list.select_set(search_list.index(songs[current_song]))
+    else:
+        search_list = []
+        refresh_window()
+
+
+def clear_search() -> None:
+    global search_list
+    if bool(search_list):
+        search_list = []
+        top_player_search_box.delete(0, 'end')
+        refresh_window()
+
+
+def search_hover(event) -> None:
+    global search_list
+    if str(event.type) == "FocusIn" and top_player_search_box.get() == "Search here" and not bool(search_list):
+        top_player_search_box.delete(0, 'end')
+    elif str(event.type) == "FocusOut":
+        top_player_search_box.delete(0, 'end')
+        top_player_search_box.insert(0, 'Search here')
 
 
 # end
@@ -981,7 +1052,7 @@ main_init_frame.configure(background="#fff")
 logo_label: ClassVar = ttk.Label(main_init_frame, image=logo_1_img, font='Bahnschrift 11', background='#fff'
                                  , foreground='#000', border='0')
 version_label: ClassVar = ttk.Label(main_init_frame, text="V" + version, font='Bahnschrift 11', background='#fff'
-                                    , foreground='#000', border='0', anchor=CENTER)
+                                    , foreground='#000', border='0', anchor='center')
 logo_label.place(relx=0.5, rely=0.35, anchor="n")
 version_label.place(relx=0.5, rely=0.52, anchor="n")
 main_init_frame.place(relx=0.5, rely=0, anchor="n", width=806, height=500)
@@ -1022,7 +1093,7 @@ main_settings_frame: ClassVar = Frame(main_window)
 
 settings_bar_frame: ClassVar = Frame(main_settings_frame)
 
-settings_label: ClassVar = ttk.Label(settings_bar_frame, text="Settings", font='Bahnschrift 15', style="W.TLabel")
+settings_label: ClassVar = ttk.Label(settings_bar_frame, text="Settings", font='Bahnschrift 15')
 settings_back_button: ClassVar = ttk.Button(settings_bar_frame, cursor="hand2", takefocus=False,
                                             command=lambda: show(main_player_frame))
 settings_label.place(relx=0.005, rely=0.12)
@@ -1030,75 +1101,54 @@ settings_back_button.place(relx=0.9548, rely=0)
 settings_bar_frame.place(relx=0, rely=0, width=806, height=38)
 main_settings_frame.place(relx=0.5, rely=0, anchor="n", relwidth=1, height=500)
 # end
-# first setting
-settings_frame_first: ClassVar = Frame(main_settings_frame)
-first_settings_refresh_label: ClassVar = ttk.Label(settings_frame_first, text="Refresh rate", font='Bahnschrift 12',
-                                                   style="W.TLabel")
-first_settings_refresh_scale: ClassVar = ttk.Scale(settings_frame_first, from_=1, to=10, orient=HORIZONTAL,
-                                                   cursor="hand2", command=set_refresh)
-first_settings_refresh_label.pack(side=LEFT)
-first_settings_refresh_scale.pack(side=RIGHT)
-settings_frame_first.place(relx=0.005, rely=0.08, width=300, height=40)
-# end
-# second setting
-settings_frame_second: ClassVar = Frame(main_settings_frame)
-second_settings_duration_label: ClassVar = ttk.Label(settings_frame_second, text="Transition duration"
-                                                     , font='Bahnschrift 12', style="W.TLabel")
-second_settings_duration_scale: ClassVar = ttk.Scale(settings_frame_second, from_=0, to=10, orient=HORIZONTAL
-                                                     , cursor="hand2", command=set_duration)
-second_settings_duration_label.pack(side=LEFT)
-second_settings_duration_scale.pack(side=RIGHT)
-settings_frame_second.place(relx=0.005, rely=0.16, width=300, height=40)
-# end
 # third setting
 settings_frame_third: ClassVar = Frame(main_settings_frame)
-third_settings_theme_label: ClassVar = ttk.Label(settings_frame_third, text="Dark theme", font='Bahnschrift 11'
-                                                 , style="W.TLabel")
+third_settings_theme_label: ClassVar = ttk.Label(settings_frame_third, text="Dark theme", font='Bahnschrift 11')
 third_settings_theme_button: ClassVar = ttk.Button(settings_frame_third, cursor="hand2", takefocus=False
                                                    , command=toggle_theme)
-third_settings_theme_label.pack(side=LEFT, padx=(0, 5))
-third_settings_theme_button.pack(side=LEFT, padx=(3, 0))
-settings_frame_third.place(relx=0.005, rely=0.24, width=300, height=40)
+third_settings_theme_label.pack(side='left', padx=(0, 5))
+third_settings_theme_button.pack(side='left', padx=(3, 0))
+settings_frame_third.place(relx=0.005, rely=0.08, width=300, height=40)
 # end
 # fourth setting
 settings_frame_fourth: ClassVar = Frame(main_settings_frame)
 fourth_settings_buffer_label: ClassVar = ttk.Label(settings_frame_fourth, text="Use faster buffer"
-                                                   , font='Bahnschrift 11', style="W.TLabel")
+                                                   , font='Bahnschrift 11')
 fourth_settings_buffer_button: ClassVar = ttk.Button(settings_frame_fourth, cursor="hand2", takefocus=False
                                                      , command=toggle_buffer)
-fourth_settings_buffer_label.pack(side=LEFT, padx=(0, 5))
-fourth_settings_buffer_button.pack(side=LEFT, padx=(3, 0))
-settings_frame_fourth.place(relx=0.005, rely=0.32, width=300, height=40)
+fourth_settings_buffer_label.pack(side='left', padx=(0, 5))
+fourth_settings_buffer_button.pack(side='left', padx=(3, 0))
+settings_frame_fourth.place(relx=0.005, rely=0.16, width=300, height=40)
 # end
 # fifth setting
 settings_frame_fifth: ClassVar = Frame(main_settings_frame)
 fifth_settings_continue_label: ClassVar = ttk.Label(settings_frame_fifth, text="Resume playback on startup",
-                                                    font='Bahnschrift 11', style="W.TLabel")
+                                                    font='Bahnschrift 11')
 fifth_settings_continue_button: ClassVar = ttk.Button(settings_frame_fifth, cursor="hand2", takefocus=False,
                                                       command=toggle_continue)
-fifth_settings_continue_label.pack(side=LEFT, padx=(0, 5))
-fifth_settings_continue_button.pack(side=LEFT, padx=(3, 0))
-settings_frame_fifth.place(relx=0.005, rely=0.4, width=300, height=40)
+fifth_settings_continue_label.pack(side='left', padx=(0, 5))
+fifth_settings_continue_button.pack(side='left', padx=(3, 0))
+settings_frame_fifth.place(relx=0.005, rely=0.24, width=300, height=40)
 # end
 # sixth setting
 settings_frame_sixth: ClassVar = Frame(main_settings_frame)
 sixth_settings_fade_label: ClassVar = ttk.Label(settings_frame_sixth, text="Enable transparency",
-                                                font='Bahnschrift 11', style="W.TLabel")
+                                                font='Bahnschrift 11')
 sixth_settings_fade_button: ClassVar = ttk.Button(settings_frame_sixth, cursor="hand2", takefocus=False,
                                                   command=toggle_fade)
-sixth_settings_fade_label.pack(side=LEFT, padx=(0, 5))
-sixth_settings_fade_button.pack(side=LEFT, padx=(3, 0))
-settings_frame_sixth.place(relx=0.005, rely=0.48, width=300, height=40)
+sixth_settings_fade_label.pack(side='left', padx=(0, 5))
+sixth_settings_fade_button.pack(side='left', padx=(3, 0))
+settings_frame_sixth.place(relx=0.005, rely=0.32, width=300, height=40)
 # end
 # seventh setting
 settings_frame_seventh: ClassVar = Frame(main_settings_frame)
 seventh_settings_update_label: ClassVar = ttk.Label(settings_frame_seventh, text="Check for updates",
-                                                    font='Bahnschrift 11', style="W.TLabel")
+                                                    font='Bahnschrift 11')
 seventh_settings_update_button: ClassVar = ttk.Button(settings_frame_seventh, cursor="hand2", takefocus=False,
                                                       command=toggle_update)
-seventh_settings_update_label.pack(side=LEFT, padx=(0, 5))
-seventh_settings_update_button.pack(side=LEFT, padx=(3, 0))
-settings_frame_seventh.place(relx=0.005, rely=0.56, width=300, height=40)
+seventh_settings_update_label.pack(side='left', padx=(0, 5))
+seventh_settings_update_button.pack(side='left', padx=(3, 0))
+settings_frame_seventh.place(relx=0.005, rely=0.4, width=300, height=40)
 # end
 # sounder changelog
 settings_version_button: ClassVar = ttk.Button(main_settings_frame,
@@ -1106,7 +1156,7 @@ settings_version_button: ClassVar = ttk.Button(main_settings_frame,
 settings_version_button.place(relx=0.005, rely=0.925, relwidth=0.07)
 # author label
 settings_author_label: ClassVar = ttk.Label(main_settings_frame, text="Sounder © by Mateusz Perczak"
-                                            , font='Bahnschrift 11', style="W.TLabel")
+                                            , font='Bahnschrift 11')
 settings_author_label.place(relx=0.5, rely=0.94, anchor="n")
 # end
 # main frame
@@ -1119,13 +1169,18 @@ top_player_frame: ClassVar = Frame(main_player_frame)
 top_player_refresh_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False, command=refresh_dir)
 top_player_folder_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
                                                 command=change_dir_btn)
-top_player_path_label: ClassVar = ttk.Label(top_player_frame, width=85, textvariable=path, font='Bahnschrift 11'
-                                            , style="W.TLabel")
+top_search_frame: ClassVar = Frame(top_player_frame)
+top_player_search_box: ClassVar = Entry(top_search_frame, font=('Bahnschrift', 11), exportselection=1, relief='flat')
+top_player_search_box.insert(0, 'Search here')
+top_player_search_box.place(relx=0.5, rely=0.05, relwidth=0.993, anchor='n')
+top_player_delete_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False
+                                                , command=clear_search)
 top_player_settings_button: ClassVar = ttk.Button(top_player_frame, cursor="hand2", takefocus=False,
                                                   command=lambda: show(main_settings_frame))
 top_player_refresh_button.place(relx=0, rely=0)
 top_player_folder_button.place(relx=0.046, rely=0)
-top_player_path_label.place(relx=0.095, rely=0.17, relwidth=0.9)
+top_search_frame.place(relx=0.095, rely=0.17, relwidth=0.35, relheight=0.65)
+top_player_delete_button.place(relx=0.45, rely=0.05)
 top_player_settings_button.place(relx=0.9548, rely=0)
 top_player_frame.place(relx=0, rely=0, width=806, height=36)
 # end
@@ -1133,11 +1188,12 @@ top_player_frame.place(relx=0, rely=0, width=806, height=36)
 bottom_player_frame: ClassVar = Frame(main_player_frame)
 # left frame
 left_player_frame: ClassVar = Frame(bottom_player_frame)
-left_player_music_scrollbar: ClassVar = ttk.Scrollbar(left_player_frame, orient=HORIZONTAL, cursor="hand2",
+left_player_music_scrollbar: ClassVar = ttk.Scrollbar(left_player_frame, orient="horizontal", cursor="hand2",
                                                       takefocus=False)
 left_player_music_list: ClassVar = Listbox(left_player_frame, font='Bahnschrift 11', cursor="hand2"
                                            , bd=0, activestyle="none", takefocus=False, selectmode="SINGLE",
-                                           highlightthickness=0, xscrollcommand=left_player_music_scrollbar.set)
+                                           highlightthickness=0, xscrollcommand=left_player_music_scrollbar.set
+                                           , exportselection=0)
 left_player_music_scrollbar.configure(command=left_player_music_list.xview)
 left_player_music_scrollbar.place(relx=0.005, rely=0.95, relwidth=1)
 left_player_music_list.place(relx=0.005, rely=0, relwidth=1, relheight=0.94)
@@ -1145,16 +1201,12 @@ left_player_frame.place(relx=0, rely=0, width=403, relheight=1)
 # end
 # right frame
 right_player_frame = Frame(bottom_player_frame)
-right_player_album_label: ClassVar = ttk.Label(right_player_frame, textvariable=album_name, font='Bahnschrift 10'
-                                               , style="W.TLabel")
-right_player_album_art_label: ClassVar = ttk.Label(right_player_frame, font='Bahnschrift 11',
-                                                   style="W.TLabel")
-right_player_title_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_title, font='Bahnschrift 11',
-                                               style="W.TLabel", wraplength=350)
-right_player_artist_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_artist, font='Bahnschrift 10',
-                                                style="W.TLabel")
-right_player_bitrate_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_bitrate, font='Bahnschrift 8',
-                                                 style="S.TLabel")
+right_player_album_label: ClassVar = ttk.Label(right_player_frame, textvariable=album_name, font='Bahnschrift 10')
+right_player_album_art_label: ClassVar = ttk.Label(right_player_frame, font='Bahnschrift 11', )
+right_player_title_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_title, font='Bahnschrift 11'
+                                               , wraplength=350)
+right_player_artist_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_artist, font='Bahnschrift 10', )
+right_player_bitrate_label: ClassVar = ttk.Label(right_player_frame, textvariable=music_bitrate, font='Bahnschrift 8', )
 right_player_album_label.place(relx=0.5, rely=0.008, anchor="n")
 right_player_album_art_label.place(relx=0.5, rely=0.06, anchor="n")
 right_player_title_label.place(relx=0.5, rely=0.55, anchor="n")
@@ -1179,16 +1231,14 @@ mode_player_mode_button.place(relx=0.5, rely=0.54, anchor="n")
 buttons_player_frame.place(relx=0.5, rely=0.71, anchor="n", relwidth=0.3, relheight=0.15)
 # bottom_time_frame
 bottom_time_frame: ClassVar = Frame(right_player_frame)
-
 bottom_player_now_label: ClassVar = ttk.Label(bottom_time_frame, textvariable=music_position, font='Bahnschrift 10',
-                                              style="W.TLabel")
-bottom_player_progress_bar: ClassVar = ttk.Progressbar(bottom_time_frame, orient=HORIZONTAL, mode="determinate"
-                                                       , style="W.Horizontal.TProgressbar")
-bottom_player_end_label: ClassVar = ttk.Label(bottom_time_frame, textvariable=music_total, font='Bahnschrift 10',
-                                              style="W.TLabel")
-bottom_player_now_label.pack(side=LEFT)
-bottom_player_progress_bar.pack(side=LEFT, fill=X, expand=True, pady=(2, 0))
-bottom_player_end_label.pack(side=RIGHT)
+                                              justify='center', anchor='center')
+bottom_player_progress_bar: ClassVar = ttk.Progressbar(bottom_time_frame, orient="horizontal", mode="determinate")
+bottom_player_end_label: ClassVar = ttk.Label(bottom_time_frame, textvariable=music_total, font='Bahnschrift 10'
+                                              , justify='center', anchor='center')
+bottom_player_now_label.place(relx=0, rely=0, relwidth=0.08)
+bottom_player_progress_bar.place(relx=0.07, rely=0.15, relwidth=0.86, height=15)
+bottom_player_end_label.place(relx=0.92, rely=0, relwidth=0.08)
 bottom_time_frame.place(relx=0, rely=0.94, relwidth=1, relheight=0.04)
 # end
 bottom_player_frame.place(relx=0.5, rely=0.09, anchor="n", relwidth=1, height=464)
@@ -1198,6 +1248,9 @@ show(main_init_frame)
 init_thread: ClassVar = Thread(target=init_player, daemon=True).start()
 # end
 left_player_music_list.bind("<<ListboxSelect>>", list_box_play)
+top_player_search_box.bind("<KeyRelease>", search)
+top_player_search_box.bind("<FocusIn>", search_hover)
+top_player_search_box.bind("<FocusOut>", search_hover)
 main_window.protocol("WM_DELETE_WINDOW", close)
 main_window.deiconify()
 main_window.mainloop()

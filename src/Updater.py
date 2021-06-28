@@ -2,25 +2,25 @@ try:
     from os import getcwd, startfile, rename, remove
     from os.path import dirname, isfile, basename
     from threading import Thread
-    import json
-    from tkinter import *
+    from json import load
+    from tkinter import Tk, PhotoImage, sys, Frame
     from tkinter import ttk
     from typing import ClassVar, Dict, List
     from requests import get
-    import zipfile
+    from zipfile import ZipFile
     import logging
     from io import BytesIO
     from time import sleep
     from psutil import process_iter
     from PIL import Image, ImageSequence, ImageTk
-except ImportError:
-    sys.exit(1)
+except ImportError as e:
+    sys.exit(e)
 
 # dir
-# sounder_dir: str = getcwd()
-sounder_dir: str = dirname(sys.executable)
+sounder_dir: str = getcwd()
+# sounder_dir: str = dirname(sys.executable)
 # log
-logging.basicConfig(filename=sounder_dir + "\\errors.log", level=logging.ERROR)
+logging.basicConfig(filename=f"{sounder_dir}\\errors.log", level=logging.ERROR)
 # window setup
 updater_window: ClassVar = Tk()
 updater_window.withdraw()
@@ -28,10 +28,10 @@ updater_window.geometry(f"375x100+{int(updater_window.winfo_x() + ((updater_wind
                         f"+{int(updater_window.winfo_y() +((updater_window.winfo_screenheight() - 100) / 2))}")
 updater_window.title("Sounder updater")
 try:
-    updater_window.iconbitmap(sounder_dir + "\\icon.ico")
+    updater_window.iconbitmap(f"{sounder_dir}\\icon.ico")
 except:
     sys.exit(1)
-updater_window.resizable(width=FALSE, height=FALSE)
+updater_window.resizable(width=False, height=False)
 updater_window.configure(background="#fff")
 # theme
 updater_theme = ttk.Style()
@@ -69,7 +69,7 @@ def load_config() -> bool:
     if isfile('cfg.json'):
         try:
             with open('cfg.json', 'r') as data:
-                config = json.load(data)
+                config = load(data)
             return True
         except:
             return False
@@ -122,7 +122,7 @@ def update() -> bool:
                     process.kill()
             change_mode("indeterminate")
             update_label.configure(text="Installing updates ...")
-            with zipfile.ZipFile(BytesIO(package)) as zip_file:
+            with ZipFile(BytesIO(package)) as zip_file:
                 for file in zip_file.namelist():
                     update_data.configure(text=f"{zip_file.namelist().index(file)} / {len(zip_file.namelist())}")
                     if file == "Updater.exe" or file == "errors.log":
@@ -222,7 +222,7 @@ def load_img() -> None:
 # error frame
 error_frame: ClassVar = Frame(updater_window)
 error_frame.configure(background="#fff")
-error_reason_label: ClassVar = ttk.Label(error_frame, text="Error:", anchor=CENTER, font='Bahnschrift 11')
+error_reason_label: ClassVar = ttk.Label(error_frame, text="Error:", anchor='center', font='Bahnschrift 11')
 error_exit_button: ClassVar = ttk.Button(error_frame, text="EXIT", cursor="hand2", takefocus=False, command=close)
 error_reason_label.place(relx=0.5, rely=0, relheight=0.58, anchor="n")
 error_exit_button.place(relx=0.5, rely=0.6, relwidth=0.23, anchor="n")
@@ -231,10 +231,10 @@ error_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 # update frame
 update_frame: ClassVar = Frame(updater_window)
 update_frame.configure(background="#fff")
-update_img_label: ClassVar = ttk.Label(update_frame, image=None, anchor=CENTER)
+update_img_label: ClassVar = ttk.Label(update_frame, image=None, anchor='center')
 update_label: ClassVar = ttk.Label(update_frame, text="Downloading updates ...", font='Bahnschrift 11')
-update_data: ClassVar = ttk.Label(update_frame, text="-- MB / --MB", font='Bahnschrift 10', anchor=CENTER)
-update_progress: ClassVar = ttk.Progressbar(update_frame, orient=HORIZONTAL)
+update_data: ClassVar = ttk.Label(update_frame, text="-- MB / --MB", font='Bahnschrift 10', anchor='center')
+update_progress: ClassVar = ttk.Progressbar(update_frame, orient='horizontal')
 update_img_label.place(relx=0, rely=0, relwidth=0.25, relheight=1)
 update_label.place(relx=0.25, rely=0.15, relwidth=0.45, relheight=0.25)
 update_data.place(relx=0.70, rely=0.15, relwidth=0.30, relheight=0.25)
@@ -245,7 +245,7 @@ update_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 checking_frame: ClassVar = Frame(updater_window)
 checking_frame.configure(background="#fff")
 checking_label: ClassVar = ttk.Label(checking_frame, text="Verifying\n"
-                                                          ". . .", font='Bahnschrift 16', anchor=CENTER, justify=CENTER)
+                                                          ". . .", font='Bahnschrift 16', anchor='center', justify='center')
 checking_label.place(relx=0.5, rely=0, relheight=1, anchor="n")
 checking_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 # end
@@ -254,7 +254,7 @@ choice_frame: ClassVar = Frame(updater_window)
 choice_frame.configure(background="#fff")
 choice_label: ClassVar = ttk.Label(choice_frame, text="The latest version of Sounder is already installed.\n"
                                                       " Would you like to install it anyway?", font='Bahnschrift 11'
-                                   , anchor=CENTER, justify=CENTER)
+                                   , anchor='center', justify='center')
 choice_install_button: ClassVar = ttk.Button(choice_frame, text="INSTALL", cursor="hand2", takefocus=False,
                                              command=update_task)
 choice_exit_button: ClassVar = ttk.Button(choice_frame, text="EXIT", cursor="hand2", takefocus=False, command=close)
@@ -267,10 +267,10 @@ choice_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 finish_frame: ClassVar = Frame(updater_window)
 finish_frame.configure(background="#fff")
 finish_label: ClassVar = ttk.Label(finish_frame, text="All done!\nLaunching sounder in 3s"
-                                   , anchor=CENTER, justify=CENTER, font='Bahnschrift 17')
+                                   , anchor='center', justify='center', font='Bahnschrift 17')
 finish_label.place(relx=0, rely=0, relwidth=1, relheight=1)
 finish_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 # end
-# end
 Thread(target=init, daemon=True).start()
+
 updater_window.mainloop()

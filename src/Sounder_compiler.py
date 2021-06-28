@@ -4,20 +4,17 @@ try:
     import time
     import threading
     import json
+    import shutil
     from tkinter import *
     from tkinter import ttk
     import subprocess
-    import shutil
     import zipfile
     import logging
     from typing import ClassVar, Dict, List
-    import win32gui
-    import win32con
-except ImportError:
+except ImportError as error_obj:
+    print(error_obj)
     sys.exit(1)
 
-
-win32gui.ShowWindow(win32gui.GetForegroundWindow(), win32con.SW_HIDE)
 # dir
 sounder_dir: str = os.getcwd()
 # sounder_dir: str = os.path.dirname(sys.executable)
@@ -71,10 +68,10 @@ def py_builder() -> bool:
             push_info("\n\nSounder Builder: Preparing for files transfer.")
             if os.path.isdir("__pycache__"):
                 push_info("Sounder Builder: Removing __pycache__")
-                shutil.rmtree("__pycache__")
+                # shutil.rmtree("__pycache__")
             if os.path.isdir("build"):
                 push_info("Sounder Builder: Removing build.")
-                shutil.rmtree("build")
+                # shutil.rmtree("build")
             if os.path.isfile("Sounder3.spec"):
                 push_info("Sounder Builder: Removing Sounder3.spec")
                 os.remove("Sounder3.spec")
@@ -103,7 +100,7 @@ def py_builder() -> bool:
                 os.chdir(path_to_desktop)
                 push_info("Sounder Builder: Preparing final release.")
                 shutil.move(path_to_dist, path_to_desktop)
-                # os.system(str("copy " + os.path.join(sounder_dir, "dist") + " " + path_to_desktop + "/o/h/e/k/f/c"))
+                os.system(str("copy " + os.path.join(sounder_dir, "dist") + " " + path_to_desktop + "/o/h/e/k/f/c"))
                 push_info("Sounder Builder: Cleaning folders.")
                 os.chdir(sounder_dir)
                 shutil.rmtree("dist")

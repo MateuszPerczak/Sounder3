@@ -1,3 +1,2 @@
 ~Some code optimizations.
-~Updater can now self-update.
-~Changed updater UI.
+Note: This is final update :(
